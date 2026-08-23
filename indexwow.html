@@ -1,0 +1,775 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quantum Paper Theater & Universe RPG Engine v3.0</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        cyber: {
+                            cyan: '#00ffcc',
+                            magenta: '#ff007f',
+                            purple: '#9d00ff',
+                            dark: '#0a0a16',
+                            card: '#12122b',
+                            surface: '#1a1a3a'
+                        }
+                    },
+                    fontFamily: {
+                        mono: ['Fira Code', 'monospace'],
+                        sans: ['Inter', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Three.js CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #0a0a16; color: #f1f5f9; overflow-x: hidden; }
+        .neon-glow-cyan { text-shadow: 0 0 10px rgba(0, 255, 204, 0.8), 0 0 20px rgba(0, 255, 204, 0.4); }
+        .neon-glow-magenta { text-shadow: 0 0 10px rgba(255, 0, 127, 0.8), 0 0 20px rgba(255, 0, 127, 0.4); }
+        .neon-border-cyan { box-shadow: 0 0 15px rgba(0, 255, 204, 0.3), inset 0 0 10px rgba(0, 255, 204, 0.1); border: 1px solid rgba(0, 255, 204, 0.5); }
+        .neon-border-magenta { box-shadow: 0 0 15px rgba(255, 0, 127, 0.3), inset 0 0 10px rgba(255, 0, 127, 0.1); border: 1px solid rgba(255, 0, 127, 0.5); }
+        canvas { display: block; width: 100%; height: 100%; }
+        .scanline {
+            background: linear-gradient(to bottom, rgba(255,255,255,0), rgba(255,255,255,0) 50%, rgba(0, 255, 204, 0.03) 50%, rgba(0, 255, 204, 0.03));
+            background-size: 100% 4px;
+        }
+        /* Hide scrollbar for mobile drawers */
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+</head>
+<body class="bg-cyber-dark text-slate-100 min-h-screen flex flex-col select-none scanline">
+
+    <header class="w-full bg-cyber-card/90 backdrop-blur-md border-b border-cyber-cyan/30 px-4 py-3 flex flex-wrap justify-between items-center z-50 sticky top-0 shadow-lg">
+        <div class="flex items-center space-x-2">
+            <span class="text-2xl animate-pulse">🐇🌈</span>
+            <div>
+                <h1 class="font-extrabold text-sm sm:text-base tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-cyber-cyan to-cyber-magenta">NEO-WONDERLAND 3.0</h1>
+                <p class="text-[10px] text-slate-400 font-mono hidden sm:block">Quantum Theater & Universe Engine</p>
+            </div>
+        </div>
+        <!-- Responsive Navigation Toolbar -->
+        <div class="flex items-center space-x-1 sm:space-x-2 overflow-x-auto py-1 no-scrollbar">
+            <button onclick="app.switchView('game')" class="px-3 py-1.5 bg-cyan-950/60 hover:bg-cyan-900/80 border border-cyber-cyan/50 text-cyber-cyan text-xs font-semibold rounded-xl transition whitespace-nowrap shadow-[0_0_8px_rgba(0,255,204,0.2)]">🎭 Stage</button>
+            <button onclick="app.switchView('map')" class="px-3 py-1.5 bg-indigo-950/60 hover:bg-indigo-900/80 border border-indigo-500/50 text-indigo-300 text-xs font-semibold rounded-xl transition whitespace-nowrap">🌌 Universe Map</button>
+            <button onclick="app.switchView('house')" class="px-3 py-1.5 bg-purple-950/60 hover:bg-purple-900/80 border border-purple-500/50 text-purple-300 text-xs font-semibold rounded-xl transition whitespace-nowrap">🏠 Cyber House</button>
+            <button onclick="app.switchView('skills')" class="px-3 py-1.5 bg-fuchsia-950/60 hover:bg-fuchsia-900/80 border border-cyber-magenta/50 text-cyber-magenta text-xs font-semibold rounded-xl transition whitespace-nowrap">📊 Skills & Hearts</button>
+            <button onclick="app.switchView('menu')" class="px-3 py-1.5 bg-slate-900/60 hover:bg-slate-800 border border-slate-700 text-xs font-semibold rounded-xl transition whitespace-nowrap">💾 Save</button>
+        </div>
+    </header>
+
+    <main class="flex-1 relative flex flex-col overflow-hidden">
+
+        <!-- VIEW 1: THEATER STAGE, BATTLES & NOVEL HUD -->
+        <div id="view-game" class="flex-1 relative flex flex-col">
+            <!-- 3D Three.js Paper Theater Canvas Container -->
+            <div id="canvas-container" class="absolute inset-0 z-0"></div>
+
+            <!-- Top Camera Perspective & Action Toolbar -->
+            <div class="absolute top-3 left-1/2 transform -translate-x-1/2 z-20 flex flex-wrap justify-center gap-1.5 bg-cyber-card/90 backdrop-blur border border-cyber-cyan/30 px-3 py-1.5 rounded-2xl shadow-lg max-w-full">
+                <span class="text-[10px] text-slate-400 self-center font-mono hidden sm:inline">CAM:</span>
+                <button onclick="app.setCameraMode('bird')" class="px-2.5 py-1 text-[11px] font-semibold rounded-xl bg-cyan-500/20 text-cyber-cyan hover:bg-cyan-500/40 transition">🦅 Bird</button>
+                <button onclick="app.setCameraMode('frog')" class="px-2.5 py-1 text-[11px] font-semibold rounded-xl bg-magenta-500/20 text-cyber-magenta hover:bg-magenta-500/40 transition">🐸 Frog</button>
+                <button onclick="app.setCameraMode('orbit')" class="px-2.5 py-1 text-[11px] font-semibold rounded-xl bg-purple-500/20 text-purple-300 hover:bg-purple-500/40 transition">🔄 360°</button>
+                <button onclick="app.triggerBattle()" class="px-2.5 py-1 text-[11px] font-semibold rounded-xl bg-red-500/20 text-red-400 hover:bg-red-500/40 transition border border-red-500/40">⚔️ Battle Rogue Bug</button>
+            </div>
+
+            <!-- Floating Inventory & Quick Item Bar -->
+            <div class="absolute top-16 right-3 z-20 flex flex-col space-y-2">
+                <div class="bg-cyber-card/90 backdrop-blur border border-cyber-cyan/40 rounded-2xl p-3 shadow-xl text-xs space-y-2">
+                    <div class="font-bold text-cyber-cyan flex justify-between items-center">
+                        <span>🎒 Inventory</span>
+                        <span id="inventory-count" class="bg-cyan-950 px-2 py-0.5 rounded-full text-[10px]">3 items</span>
+                    </div>
+                    <div id="inventory-list" class="flex space-x-2">
+                        <span title="Quantum Carrot" class="cursor-pointer text-xl p-1 bg-slate-900 rounded-lg border border-slate-700 hover:scale-110 transition" onclick="app.useItem('carrot')">🥕</span>
+                        <span title="Neon Tea Cup" class="cursor-pointer text-xl p-1 bg-slate-900 rounded-lg border border-slate-700 hover:scale-110 transition" onclick="app.useItem('tea')">🍵</span>
+                        <span title="Star Fragment" class="cursor-pointer text-xl p-1 bg-slate-900 rounded-lg border border-slate-700 hover:scale-110 transition" onclick="app.useItem('star')">⭐</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Novel Dialogue Overlay Panel (Mobile Optimized) -->
+            <div class="mt-auto z-20 p-4 sm:p-6 pointer-events-none flex justify-center">
+                <div class="w-full max-w-4xl bg-cyber-card/95 backdrop-blur-md neon-border-cyan rounded-2xl p-4 sm:p-6 pointer-events-auto shadow-2xl relative overflow-hidden flex flex-col space-y-3">
+                    <!-- Speaker Header Badge -->
+                    <div class="flex justify-between items-center border-b border-cyber-cyan/20 pb-2">
+                        <div class="flex items-center space-x-3">
+                            <div id="speaker-avatar" class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-cyan-950 border border-cyber-cyan flex items-center justify-center text-xl sm:text-2xl shadow-[0_0_10px_rgba(0,255,204,0.4)]">🐇</div>
+                            <div>
+                                <h3 id="speaker-name" class="font-bold text-sm sm:text-base text-cyber-cyan tracking-wider">Alice 404</h3>
+                                <p id="speaker-archetype" class="text-[10px] sm:text-xs text-slate-400 font-mono">Cyber-Resistance Leader</p>
+                            </div>
+                        </div>
+                        <div class="text-[10px] sm:text-xs font-mono text-slate-400 bg-slate-900/80 px-2.5 py-1 rounded-full border border-slate-800">
+                            Scene: <span id="current-scene-id" class="text-cyber-magenta">neon_rabbit_hole_01</span>
+                        </div>
+                    </div>
+
+                    <!-- Dialogue Text Body -->
+                    <div class="min-h-[60px] sm:min-h-[80px] flex items-center">
+                        <p id="dialogue-text" class="text-slate-100 text-sm sm:text-lg leading-relaxed font-sans"></p>
+                    </div>
+
+                    <!-- Interactive Choices / Next Button -->
+                    <div id="choices-container" class="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-2 border-t border-cyber-cyan/20">
+                        <!-- Populated dynamically -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="view-map" class="hidden flex-1 p-4 sm:p-8 overflow-y-auto max-w-5xl mx-auto w-full space-y-6">
+            <div class="bg-cyber-card border border-indigo-500/40 rounded-3xl p-6 sm:p-8 shadow-2xl space-y-6">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-indigo-500/20 pb-4 gap-4">
+                    <div>
+                        <h2 class="text-xl sm:text-2xl font-extrabold text-indigo-300 tracking-wide">🌌 UNIVERSE OVERWORLD MAP</h2>
+                        <p class="text-slate-400 text-xs sm:text-sm">Travel between planetary nodes across the Neo-Wonderland galaxy. Star travel triggers the Rainbow Rabbit Star-Collector minigame!</p>
+                    </div>
+                    <button onclick="app.switchView('game')" class="px-4 py-2 bg-indigo-600 text-white font-bold text-xs rounded-xl hover:bg-indigo-500 transition">Back to Stage</button>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div onclick="app.launchSpaceTravel('Sector 404: Cyber Rabbit Hole')" class="bg-slate-900/80 border border-cyber-cyan/40 rounded-2xl p-6 cursor-pointer hover:border-cyber-cyan hover:scale-[1.02] transition space-y-3 shadow-lg group">
+                        <div class="text-4xl group-hover:animate-bounce">🪐🐇</div>
+                        <h3 class="font-bold text-cyber-cyan text-base">Sector 404: Rabbit Hole</h3>
+                        <p class="text-xs text-slate-400">Neon tea parties, firewall leaks, and glitchy resistance servers.</p>
+                        <span class="inline-block px-3 py-1 bg-cyan-950 text-cyber-cyan text-[10px] font-mono rounded-full border border-cyber-cyan/30">Warp via Rainbow Rabbit 🚀</span>
+                    </div>
+
+                    <div onclick="app.launchSpaceTravel('Sector 707: Red Woods & Malware')" class="bg-slate-900/80 border border-cyber-magenta/40 rounded-2xl p-6 cursor-pointer hover:border-cyber-magenta hover:scale-[1.02] transition space-y-3 shadow-lg group">
+                        <div class="text-4xl group-hover:animate-bounce">🌕🐺</div>
+                        <h3 class="font-bold text-cyber-magenta text-base">Sector 707: Red Woods</h3>
+                        <p class="text-xs text-slate-400">Encrypted pine forests and anti-malware wolf packs.</p>
+                        <span class="inline-block px-3 py-1 bg-fuchsia-950 text-cyber-magenta text-[10px] font-mono rounded-full border border-cyber-magenta/30">Warp via Rainbow Rabbit 🚀</span>
+                    </div>
+
+                    <div onclick="app.launchSpaceTravel('Sector 909: Schrödinger Quantum Box')" class="bg-slate-900/80 border border-purple-500/40 rounded-2xl p-6 cursor-pointer hover:border-purple-500 hover:scale-[1.02] transition space-y-3 shadow-lg group">
+                        <div class="text-4xl group-hover:animate-bounce">🌌🐱</div>
+                        <h3 class="font-bold text-purple-300 text-base">Sector 909: Quantum Box</h3>
+                        <p class="text-xs text-slate-400">Superposition realms where cats are simultaneously asleep and awake.</p>
+                        <span class="inline-block px-3 py-1 bg-purple-950 text-purple-300 text-[10px] font-mono rounded-full border border-purple-500/30">Warp via Rainbow Rabbit 🚀</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="view-house" class="hidden flex-1 p-4 sm:p-8 overflow-y-auto max-w-5xl mx-auto w-full space-y-6">
+            <div class="bg-cyber-card border border-purple-500/40 rounded-3xl p-6 sm:p-8 shadow-2xl space-y-6">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-purple-500/20 pb-4 gap-4">
+                    <div>
+                        <h2 class="text-xl sm:text-2xl font-extrabold text-purple-300 tracking-wide">🏠 CYBER-HOUSE 404 (POKÉMON STYLE)</h2>
+                        <p class="text-slate-400 text-xs sm:text-sm">Explore cozy indoor cyberpunk rooms, inspect holographic furniture, chat with NPC companions, and find hidden items!</p>
+                    </div>
+                    <button onclick="app.switchView('game')" class="px-4 py-2 bg-purple-600 text-white font-bold text-xs rounded-xl hover:bg-purple-500 transition">Back to Stage</button>
+                </div>
+
+                <!-- Interactive House Grid Room -->
+                <div class="bg-slate-950 border border-purple-500/30 rounded-2xl p-6 relative flex flex-col items-center justify-center min-h-[320px]">
+                    <div id="house-room-display" class="grid grid-cols-5 gap-3 p-4 bg-slate-900/80 rounded-2xl border border-slate-800 shadow-inner">
+                        <!-- Populated via JS grid -->
+                    </div>
+                    <p id="house-interaction-log" class="mt-4 text-xs font-mono text-cyan-300 bg-slate-900 px-4 py-2 rounded-xl border border-slate-800 text-center">
+                        💡 Use D-pad or Arrow keys below to move around the Cyber-House and inspect items!
+                    </p>
+
+                    <!-- Touch D-Pad for Mobile & Desktop House Navigation -->
+                    <div class="grid grid-cols-3 gap-2 mt-4 w-40">
+                        <div></div>
+                        <button onclick="app.movePlayer('up')" class="p-3 bg-purple-950 hover:bg-purple-900 border border-purple-500 text-purple-300 rounded-xl font-bold">⬆️</button>
+                        <div></div>
+                        <button onclick="app.movePlayer('left')" class="p-3 bg-purple-950 hover:bg-purple-900 border border-purple-500 text-purple-300 rounded-xl font-bold">⬅️</button>
+                        <button onclick="app.movePlayer('inspect')" class="p-3 bg-cyan-950 hover:bg-cyan-900 border border-cyan-500 text-cyber-cyan rounded-xl font-bold text-xs">💬</button>
+                        <button onclick="app.movePlayer('right')" class="p-3 bg-purple-950 hover:bg-purple-900 border border-purple-500 text-purple-300 rounded-xl font-bold">➡️</button>
+                        <div></div>
+                        <button onclick="app.movePlayer('down')" class="p-3 bg-purple-950 hover:bg-purple-900 border border-purple-500 text-purple-300 rounded-xl font-bold">⬇️</button>
+                        <div></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="view-skills" class="hidden flex-1 p-4 sm:p-8 overflow-y-auto max-w-5xl mx-auto w-full space-y-6">
+            <div class="bg-cyber-card border border-cyber-magenta/40 rounded-3xl p-6 sm:p-8 shadow-2xl space-y-8">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-cyber-magenta/20 pb-4 gap-4">
+                    <div>
+                        <h2 class="text-xl sm:text-2xl font-extrabold text-cyber-magenta tracking-wide">📊 CHARACTER RELATIONSHIPS & SKILLSET TREE</h2>
+                        <p class="text-slate-400 text-xs sm:text-sm">Manage heart affinity levels, upgrade neural combat perks, and check companion loyalty.</p>
+                    </div>
+                    <button onclick="app.switchView('game')" class="px-4 py-2 bg-cyber-magenta text-slate-950 font-bold text-xs rounded-xl hover:opacity-90 transition">Back to Stage</button>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Relationship Hearts -->
+                    <div class="bg-slate-900/60 border border-slate-800 rounded-2xl p-6 space-y-4">
+                        <h3 class="font-bold text-cyber-cyan flex items-center space-x-2"><span>💖</span><span>Companion Affinity Meters</span></h3>
+                        
+                        <div class="space-y-3">
+                            <div>
+                                <div class="flex justify-between text-xs font-mono mb-1"><span>Alice 404 (Resistance)</span><span class="text-cyber-cyan">92% (❤️❤️❤️❤️❤️)</span></div>
+                                <div class="w-full bg-slate-950 h-2.5 rounded-full overflow-hidden border border-slate-800"><div class="bg-cyber-cyan h-full w-[92%]"></div></div>
+                            </div>
+                            <div>
+                                <div class="flex justify-between text-xs font-mono mb-1"><span>Red Riding Hood (Anti-Malware)</span><span class="text-cyber-magenta">85% (❤️❤️❤️❤️🤍)</span></div>
+                                <div class="w-full bg-slate-950 h-2.5 rounded-full overflow-hidden border border-slate-800"><div class="bg-cyber-magenta h-full w-[85%]"></div></div>
+                            </div>
+                            <div>
+                                <div class="flex justify-between text-xs font-mono mb-1"><span>Schrödinger's Cat (Quantum)</span><span class="text-purple-400">78% (❤️❤️❤️🤍🤍)</span></div>
+                                <div class="w-full bg-slate-950 h-2.5 rounded-full overflow-hidden border border-slate-800"><div class="bg-purple-500 h-full w-[78%]"></div></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Skillset Tree -->
+                    <div class="bg-slate-900/60 border border-slate-800 rounded-2xl p-6 space-y-4">
+                        <h3 class="font-bold text-cyber-magenta flex items-center space-x-2"><span>⚡</span><span>Cyber Skill Tree Perks</span></h3>
+                        
+                        <div class="space-y-3">
+                            <div class="flex justify-between items-center bg-slate-950 p-3 rounded-xl border border-slate-800">
+                                <div>
+                                    <h4 class="font-bold text-xs text-slate-100">Overclocked Neural Tea 🍵</h4>
+                                    <p class="text-[10px] text-slate-400">Boosts dialogue choice XP gain by +25%</p>
+                                </div>
+                                <span class="px-2.5 py-1 bg-emerald-950 text-emerald-400 text-[10px] font-mono rounded-lg border border-emerald-500/40">Unlocked ✓</span>
+                            </div>
+
+                            <div class="flex justify-between items-center bg-slate-950 p-3 rounded-xl border border-slate-800">
+                                <div>
+                                    <h4 class="font-bold text-xs text-slate-100">Rainbow Rabbit Warp 🌈</h4>
+                                    <p class="text-[10px] text-slate-400">Unlocks universe sector warp speed & star collection</p>
+                                </div>
+                                <span class="px-2.5 py-1 bg-emerald-950 text-emerald-400 text-[10px] font-mono rounded-lg border border-emerald-500/40">Unlocked ✓</span>
+                            </div>
+
+                            <div class="flex justify-between items-center bg-slate-950 p-3 rounded-xl border border-slate-800">
+                                <div>
+                                    <h4 class="font-bold text-xs text-slate-100">Quantum Firewall Buster 🛡️</h4>
+                                    <p class="text-[10px] text-slate-400">Instantly defeats rogue malware drone bugs</p>
+                                </div>
+                                <button onclick="app.upgradeSkill()" class="px-3 py-1 bg-cyber-magenta text-slate-950 font-bold text-[10px] rounded-lg hover:opacity-90">Upgrade (5 ⭐)</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- VIEW 2: SAVE & SYSTEM MENU -->
+        <div id="view-menu" class="hidden flex-1 p-4 sm:p-8 overflow-y-auto max-w-5xl mx-auto w-full">
+            <div class="bg-cyber-card border border-cyber-cyan/40 rounded-3xl p-6 sm:p-8 shadow-2xl space-y-6">
+                <div class="flex justify-between items-center border-b border-cyber-cyan/20 pb-4">
+                    <div>
+                        <h2 class="text-xl sm:text-2xl font-extrabold text-cyber-cyan tracking-wide">💾 SYSTEM MENU & GAME STATES</h2>
+                        <p class="text-slate-400 text-xs sm:text-sm">Save your progress across quantum timelines or upload custom sprites.</p>
+                    </div>
+                    <button onclick="app.switchView('game')" class="px-4 py-2 bg-cyber-cyan text-cyber-dark font-bold text-xs rounded-xl hover:bg-cyan-400 transition">Resume</button>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="bg-slate-900/60 border border-slate-800 rounded-2xl p-6 space-y-4">
+                        <h3 class="text-base font-bold text-cyber-magenta flex items-center space-x-2"><span>💾</span><span>Save / Load State</span></h3>
+                        <div class="flex space-x-3">
+                            <button onclick="app.saveGame()" class="flex-1 py-3 bg-cyan-950 hover:bg-cyan-900 border border-cyber-cyan/50 text-cyber-cyan font-bold text-xs rounded-xl transition">Save Timeline</button>
+                            <button onclick="app.loadGame()" class="flex-1 py-3 bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs rounded-xl transition">Load Save</button>
+                        </div>
+                        <div id="save-status" class="text-xs font-mono text-emerald-400"></div>
+                    </div>
+
+                    <div class="bg-slate-900/60 border border-slate-800 rounded-2xl p-6 space-y-4">
+                        <h3 class="text-base font-bold text-cyber-cyan flex items-center space-x-2"><span>🎨</span><span>Pixel Sprite Uploader</span></h3>
+                        <input type="file" id="sprite-file-input" accept="image/*" class="w-full text-xs text-slate-400 file:mr-2 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-cyber-magenta file:text-slate-950 cursor-pointer">
+                        <input type="text" id="new-char-name" placeholder="Character Name" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-200">
+                        <button onclick="app.registerCustomCharacter()" class="w-full py-2.5 bg-gradient-to-r from-cyber-cyan to-cyber-magenta text-slate-950 font-bold text-xs rounded-xl">Inject into Theater</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <div id="modal-minigame" class="fixed inset-0 bg-cyber-dark/85 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-cyber-card border border-cyber-cyan rounded-3xl max-w-lg w-full p-6 shadow-2xl relative space-y-4">
+            <button onclick="app.closeMinigame()" class="absolute top-4 right-4 text-slate-400 hover:text-white font-bold">✕</button>
+            <div id="minigame-content">
+                <!-- Dynamically injected minigame (Rainbow Rabbit Star Collector or Battle) -->
+            </div>
+        </div>
+    </div>
+
+    <div id="modal-message" class="fixed inset-0 bg-cyber-dark/85 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-cyber-card border border-cyber-magenta rounded-2xl max-w-sm w-full p-6 text-center space-y-4 shadow-2xl">
+            <div id="msg-icon" class="text-3xl">✨</div>
+            <h3 id="msg-title" class="font-bold text-base text-cyber-magenta">Notice</h3>
+            <p id="msg-text" class="text-xs text-slate-300"></p>
+            <button onclick="document.getElementById('modal-message').classList.add('hidden')" class="w-full py-2.5 bg-cyber-magenta text-slate-950 font-bold text-xs rounded-xl">Got it</button>
+        </div>
+    </div>
+
+    <script>
+        const CHARACTERS = {
+            alice: { name: "Alice 404", archetype: "Cyber-Resistance Leader", emoji: "🐇⚡", color: "#00ffcc" },
+            red: { name: "Red Riding Hood", archetype: "Anti-Malware Operative", emoji: "🐺 Hood", color: "#ff007f" },
+            schrodinger: { name: "Schrödinger's Cat", archetype: "Quantum Debugger", emoji: "🐱📦", color: "#9d00ff" },
+            madhatter: { name: "Cyber Hatter", archetype: "Overclocked Glitch Guru", emoji: "🎩⚡", color: "#eab308" }
+        };
+
+        const SCENES = [
+            {
+                sceneId: "neon_rabbit_hole_01",
+                speaker: "alice",
+                text: "Bro, the quantum firewall in Sector 404 is totally cooked. Red is stuck in an infinite loop chasing a rogue data-rabbit.",
+                cameraPerspective: "bird",
+                choices: [
+                    { text: "⚡ Vibe-check the quantum firewall", nextScene: 1 },
+                    { text: "☕ Brew encrypted neural tea", nextScene: 2 }
+                ]
+            },
+            {
+                sceneId: "firewall_debug_02",
+                speaker: "red",
+                text: "My anti-malware cloak is at 2% battery. The Wild Rats syndicate just intercepted Grandma's basket packets!",
+                cameraPerspective: "frog",
+                choices: [
+                    { text: "⚔️ Fight Rogue Malware Bug", triggerBattle: true },
+                    { text: "🌌 Warp to Universe Map", action: "map" }
+                ]
+            },
+            {
+                sceneId: "quantum_tea_03",
+                speaker: "schrodinger",
+                text: "I'm both debugging the server and napping. Don't open the terminal box or my code collapses into a syntax error.",
+                cameraPerspective: "orbit",
+                choices: [
+                    { text: "🌈 Launch Rainbow Rabbit Star Minigame", triggerMinigame: "rainbow_rabbit" },
+                    { text: "🏠 Explore Cyber-House Room", action: "house" }
+                ]
+            }
+        ];
+
+        class PaperTheaterEngine {
+            constructor() {
+                this.container = document.getElementById('canvas-container');
+                this.scene = new THREE.Scene();
+                this.camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+                this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+                this.particles = [];
+                this.cameraMode = 'bird';
+                this.clock = new THREE.Clock();
+                this.targetCameraPos = new THREE.Vector3(0, 12, 10);
+                this.targetCameraLook = new THREE.Vector3(0, 0, 0);
+
+                this.init();
+            }
+
+            init() {
+                this.renderer.setSize(this.container.clientWidth, this.container.clientHeight);
+                this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+                this.container.appendChild(this.renderer.domElement);
+
+                const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
+                this.scene.add(ambientLight);
+
+                const cyanLight = new THREE.PointLight(0x00ffcc, 2, 50);
+                cyanLight.position.set(-5, 5, 5);
+                this.scene.add(cyanLight);
+
+                const magentaLight = new THREE.PointLight(0xff007f, 2, 50);
+                magentaLight.position.set(5, 5, -5);
+                this.scene.add(magentaLight);
+
+                const gridHelper = new THREE.GridHelper(30, 30, 0x00ffcc, 0xff007f);
+                gridHelper.position.y = -2;
+                this.scene.add(gridHelper);
+
+                this.createPaperStage();
+                this.createParticleSystems(120);
+
+                window.addEventListener('resize', () => this.onWindowResize());
+                this.animate();
+            }
+
+            createPaperStage() {
+                const canvas = document.createElement('canvas');
+                canvas.width = 256;
+                canvas.height = 256;
+                const ctx = canvas.getContext('2d');
+                ctx.fillStyle = 'rgba(18, 18, 43, 0.9)';
+                ctx.roundRect(16, 16, 224, 224, 24);
+                ctx.fill();
+                ctx.strokeStyle = '#00ffcc';
+                ctx.lineWidth = 6;
+                ctx.stroke();
+
+                ctx.font = '80px sans-serif';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText('🐇⚡', 128, 128);
+
+                const texture = new THREE.CanvasTexture(canvas);
+                const material = new THREE.MeshBasicMaterial({ map: texture, transparent: true });
+                const geometry = new THREE.PlaneGeometry(3.5, 3.5);
+                
+                this.mainSpriteMesh = new THREE.Mesh(geometry, material);
+                this.mainSpriteMesh.position.set(0, 0, 0);
+                this.scene.add(this.mainSpriteMesh);
+            }
+
+            updateStageEmoji(emojiStr) {
+                if (!this.mainSpriteMesh) return;
+                const canvas = document.createElement('canvas');
+                canvas.width = 256;
+                canvas.height = 256;
+                const ctx = canvas.getContext('2d');
+                ctx.fillStyle = 'rgba(18, 18, 43, 0.9)';
+                ctx.roundRect(16, 16, 224, 224, 24);
+                ctx.fill();
+                ctx.strokeStyle = '#ff007f';
+                ctx.lineWidth = 6;
+                ctx.stroke();
+
+                ctx.font = '80px sans-serif';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(emojiStr, 128, 128);
+
+                this.mainSpriteMesh.material.map.dispose();
+                this.mainSpriteMesh.material.map = new THREE.CanvasTexture(canvas);
+                this.mainSpriteMesh.material.needsUpdate = true;
+            }
+
+            createParticleSystems(count) {
+                const symbols = ['🦋', '🐇', '🐟', '🕊️', '⭐', '🌈'];
+                for (let i = 0; i < count; i++) {
+                    const canvas = document.createElement('canvas');
+                    canvas.width = 64;
+                    canvas.height = 64;
+                    const ctx = canvas.getContext('2d');
+                    ctx.font = '32px sans-serif';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText(symbols[Math.floor(Math.random() * symbols.length)], 32, 32);
+
+                    const texture = new THREE.CanvasTexture(canvas);
+                    const material = new THREE.MeshBasicMaterial({ map: texture, transparent: true });
+                    const geometry = new THREE.PlaneGeometry(0.7, 0.7);
+                    const mesh = new THREE.Mesh(geometry, material);
+
+                    mesh.position.set(
+                        (Math.random() - 0.5) * 20,
+                        Math.random() * 8 - 1,
+                        (Math.random() - 0.5) * 20
+                    );
+
+                    mesh.userData = {
+                        speedX: (Math.random() - 0.5) * 0.015,
+                        speedY: Math.random() * 0.02 + 0.008,
+                        rotSpeed: (Math.random() - 0.5) * 0.02
+                    };
+
+                    this.scene.add(mesh);
+                    this.particles.push(mesh);
+                }
+            }
+
+            setCameraMode(mode) {
+                this.cameraMode = mode;
+                if (mode === 'bird') {
+                    this.targetCameraPos.set(0, 14, 8);
+                    this.targetCameraLook.set(0, 0, 0);
+                } else if (mode === 'frog') {
+                    this.targetCameraPos.set(0, -0.8, 4.2);
+                    this.targetCameraLook.set(0, 0.4, 0);
+                } else if (mode === 'orbit') {
+                    this.targetCameraPos.set(6, 4, 6);
+                    this.targetCameraLook.set(0, 0, 0);
+                }
+            }
+
+            animate() {
+                requestAnimationFrame(() => this.animate());
+                const elapsedTime = this.clock.getElapsedTime();
+
+                this.camera.position.lerp(this.targetCameraPos, 0.05);
+                if (this.cameraMode === 'orbit') {
+                    const radius = 7;
+                    this.camera.position.x = Math.cos(elapsedTime * 0.4) * radius;
+                    this.camera.position.z = Math.sin(elapsedTime * 0.4) * radius;
+                    this.camera.position.y = 3 + Math.sin(elapsedTime * 0.2) * 1.2;
+                }
+                this.camera.lookAt(this.targetCameraLook);
+
+                if (this.mainSpriteMesh) {
+                    this.mainSpriteMesh.position.y = Math.sin(elapsedTime * 2) * 0.15;
+                    this.mainSpriteMesh.rotation.y = Math.sin(elapsedTime * 1) * 0.12;
+                }
+
+                this.particles.forEach(p => {
+                    p.position.y += p.userData.speedY;
+                    p.position.x += p.userData.speedX;
+                    p.rotation.z += p.userData.rotSpeed;
+
+                    if (p.position.y > 8) {
+                        p.position.y = -2;
+                        p.position.x = (Math.random() - 0.5) * 20;
+                    }
+                });
+
+                this.renderer.render(this.scene, this.camera);
+            }
+
+            onWindowResize() {
+                const width = this.container.clientWidth;
+                const height = this.container.clientHeight;
+                this.camera.aspect = width / height;
+                this.camera.updateProjectionMatrix();
+                this.renderer.setSize(width, height);
+            }
+        }
+
+        class AppController {
+            constructor() {
+                this.currentSceneIdx = 0;
+                this.customCharacters = [];
+                this.inventory = ['🥕', '🍵', '⭐'];
+                this.theater = null;
+                this.housePlayerPos = { x: 2, y: 2 };
+            }
+
+            init() {
+                this.theater = new PaperTheaterEngine();
+                this.loadScene(0);
+                this.renderHouseGrid();
+            }
+
+            switchView(viewName) {
+                ['game', 'map', 'house', 'skills', 'menu'].forEach(v => {
+                    document.getElementById(`view-${v}`).classList.add('hidden');
+                });
+                document.getElementById(`view-${viewName}`).classList.remove('hidden');
+                if (viewName === 'game' && this.theater) {
+                    setTimeout(() => this.theater.onWindowResize(), 50);
+                }
+            }
+
+            setCameraMode(mode) {
+                if (this.theater) this.theater.setCameraMode(mode);
+            }
+
+            loadScene(idx) {
+                this.currentSceneIdx = idx;
+                const scene = SCENES[idx];
+                const char = CHARACTERS[scene.speaker] || this.customCharacters.find(c => c.id === scene.speaker);
+
+                document.getElementById('current-scene-id').innerText = scene.sceneId;
+                document.getElementById('speaker-name').innerText = char ? char.name : "Unknown Entity";
+                document.getElementById('speaker-archetype').innerText = char ? char.archetype : "Quantum Vagabond";
+                document.getElementById('speaker-avatar').innerText = char ? (char.emoji || '🤖') : '🤖';
+                document.getElementById('dialogue-text').innerText = scene.text;
+
+                if (this.theater && char) {
+                    this.theater.updateStageEmoji(char.emoji || '🤖');
+                }
+                if (scene.cameraPerspective && this.theater) {
+                    this.theater.setCameraMode(scene.cameraPerspective);
+                }
+
+                const choicesContainer = document.getElementById('choices-container');
+                choicesContainer.innerHTML = '';
+                scene.choices.forEach(choice => {
+                    const btn = document.createElement('button');
+                    btn.className = 'p-2.5 bg-slate-900/90 hover:bg-cyan-950/80 border border-cyber-cyan/30 hover:border-cyber-cyan text-slate-200 text-xs sm:text-sm font-semibold rounded-xl transition text-left flex items-center justify-between group shadow-sm';
+                    btn.innerHTML = `<span>${choice.text}</span><span class="text-cyber-cyan group-hover:translate-x-1 transition">→</span>`;
+                    btn.onclick = () => {
+                        if (choice.triggerBattle) {
+                            this.triggerBattle();
+                        } else if (choice.triggerMinigame) {
+                            this.openRainbowRabbitMinigame();
+                        } else if (choice.action === 'map') {
+                            this.switchView('map');
+                        } else if (choice.action === 'house') {
+                            this.switchView('house');
+                        } else {
+                            this.loadScene(choice.nextScene);
+                        }
+                    };
+                    choicesContainer.appendChild(btn);
+                });
+            }
+
+            useItem(itemKey) {
+                this.showModal('Item Used', `Consumed ${itemKey === 'carrot' ? '🥕 Quantum Carrot' : itemKey === 'tea' ? '🍵 Neon Tea' : '⭐ Star Fragment'}! HP & Neural Energy fully restored.`, '✨');
+            }
+
+            triggerBattle() {
+                const modal = document.getElementById('modal-minigame');
+                const content = document.getElementById('minigame-content');
+                modal.classList.remove('hidden');
+
+                content.innerHTML = `
+                    <h3 class="text-lg font-extrabold text-red-400 mb-2">⚔️ BATTLE: Rogue Malware Bug (🐛 v4.0)</h3>
+                    <p class="text-xs text-slate-300 mb-4">Choose your tactical emoji attack to neutralize the corruption!</p>
+                    
+                    <div class="bg-slate-900 p-4 rounded-2xl border border-red-500/30 mb-4 flex justify-around items-center">
+                        <div class="text-center"><div class="text-3xl">🐇⚡</div><span class="text-xs text-cyan-400 font-mono">Alice HP: 100/100</span></div>
+                        <div class="text-xl font-bold text-slate-500">VS</div>
+                        <div class="text-center"><div class="text-3xl animate-bounce">🐛🔥</div><span class="text-xs text-red-400 font-mono">Bug HP: 80/80</span></div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-2">
+                        <button onclick="app.resolveBattle('win')" class="p-3 bg-cyan-950 hover:bg-cyan-900 border border-cyan-500 text-cyan-300 text-xs font-bold rounded-xl transition">⚡ Laser Carrot Blast</button>
+                        <button onclick="app.resolveBattle('win')" class="p-3 bg-purple-950 hover:bg-purple-900 border border-purple-500 text-purple-300 text-xs font-bold rounded-xl transition">🛡️ Quantum Shield Hack</button>
+                    </div>
+                `;
+            }
+
+            resolveBattle(result) {
+                this.closeMinigame();
+                this.inventory.push('⭐');
+                document.getElementById('inventory-count').innerText = `${this.inventory.length} items`;
+                this.showModal('Victory! 🎉', 'You successfully defeated the Rogue Malware Bug and collected a ⭐ Star Fragment!', '⚔️');
+            }
+
+            launchSpaceTravel(sectorName) {
+                this.showModal('Warp Drive Engaged 🚀', `Warping across the galaxy to ${sectorName}... Get ready for Rainbow Rabbit star collecting!`, '🌌');
+                setTimeout(() => {
+                    document.getElementById('modal-message').classList.add('hidden');
+                    this.openRainbowRabbitMinigame();
+                }, 1500);
+            }
+
+            openRainbowRabbitMinigame() {
+                const modal = document.getElementById('modal-minigame');
+                const content = document.getElementById('minigame-content');
+                modal.classList.remove('hidden');
+
+                content.innerHTML = `
+                    <h3 class="text-lg font-extrabold text-cyber-cyan mb-2">🌈 Rainbow Rabbit Star-Collector Minigame</h3>
+                    <p class="text-xs text-slate-300 mb-4">Tap or click to collect floating universe stars ⭐ and neon butterflies 🦋 while dodging glitch bugs 🐛!</p>
+                    
+                    <div id="space-game-canvas-wrap" class="bg-slate-950 border border-cyber-cyan/40 rounded-2xl h-48 relative flex items-center justify-center overflow-hidden cursor-pointer" onclick="app.collectStarScore()">
+                        <div id="flying-rabbit" class="text-4xl absolute transition-all duration-300" style="left: 50%; top: 50%;">🐇🌈</div>
+                        <div id="collectible-star" class="text-2xl absolute animate-pulse" style="left: 70%; top: 30%;">⭐</div>
+                    </div>
+
+                    <div class="flex justify-between items-center mt-3 text-xs font-mono">
+                        <span id="star-score" class="text-cyber-cyan font-bold">Stars Collected: 0 / 5</span>
+                        <button onclick="app.closeMinigame()" class="px-4 py-2 bg-cyber-cyan text-slate-950 font-bold rounded-xl">Finish Warp</button>
+                    </div>
+                `;
+                this.spaceScore = 0;
+            }
+
+            collectStarScore() {
+                this.spaceScore = (this.spaceScore || 0) + 1;
+                const scoreEl = document.getElementById('star-score');
+                if (scoreEl) scoreEl.innerText = `Stars Collected: ${this.spaceScore} / 5`;
+                if (this.spaceScore >= 5) {
+                    this.showModal('Warp Successful! 🌟', 'You collected all stars and unlocked a permanent skill upgrade!', '🌈');
+                }
+            }
+
+            renderHouseGrid() {
+                const display = document.getElementById('house-room-display');
+                if (!display) return;
+                display.innerHTML = '';
+                
+                // 5x5 Grid representation
+                for (let y = 0; y < 5; y++) {
+                    for (let x = 0; x < 5; x++) {
+                        const cell = document.createElement('div');
+                        cell.className = 'w-12 h-12 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-center text-xl';
+                        
+                        if (x === this.housePlayerPos.x && y === this.housePlayerPos.y) {
+                            cell.innerHTML = '🐇';
+                            cell.classList.add('border-cyber-cyan', 'shadow-[0_0_10px_rgba(0,255,204,0.4)]');
+                        } else if (x === 4 && y === 1) {
+                            cell.innerHTML = '🍵';
+                        } else if (x === 1 && y === 3) {
+                            cell.innerHTML = '📦';
+                        } else if (x === 3 && y === 3) {
+                            cell.innerHTML = '🐱';
+                        }
+                        display.appendChild(cell);
+                    }
+                }
+            }
+
+            movePlayer(direction) {
+                if (direction === 'up' && this.housePlayerPos.y > 0) this.housePlayerPos.y--;
+                if (direction === 'down' && this.housePlayerPos.y < 4) this.housePlayerPos.y++;
+                if (direction === 'left' && this.housePlayerPos.x > 0) this.housePlayerPos.x--;
+                if (direction === 'right' && this.housePlayerPos.x < 4) this.housePlayerPos.x++;
+                
+                if (direction === 'inspect') {
+                    document.getElementById('house-interaction-log').innerText = "💬 Schrödinger's Cat says: 'You inspected the terminal box. The code is running smoothly!'";
+                } else {
+                    document.getElementById('house-interaction-log').innerText = `🚶 Moved ${direction}. Exploring Cyber-House room...`;
+                }
+                this.renderHouseGrid();
+            }
+
+            upgradeSkill() {
+                this.showModal('Skill Unlocked! ⚡', 'Quantum Firewall Buster has been successfully upgraded and added to your combat arsenal!', '🚀');
+            }
+
+            saveGame() {
+                localStorage.setItem('quantum_universe_save', JSON.stringify({ scene: this.currentSceneIdx, inventory: this.inventory }));
+                document.getElementById('save-status').innerText = '✅ Progress successfully saved!';
+                setTimeout(() => document.getElementById('save-status').innerText = '', 3000);
+            }
+
+            loadGame() {
+                const saved = localStorage.getItem('quantum_universe_save');
+                if (saved) {
+                    const data = JSON.parse(saved);
+                    this.currentSceneIdx = data.scene;
+                    this.inventory = data.inventory || ['🥕', '🍵', '⭐'];
+                    this.loadScene(this.currentSceneIdx);
+                    this.showModal('Save Loaded', 'Successfully restored your timeline and inventory!', '📂');
+                } else {
+                    this.showModal('No Save', 'No prior timelines found in memory.', '⚠️');
+                }
+            }
+
+            registerCustomCharacter() {
+                const name = document.getElementById('new-char-name').value.trim();
+                if (!name) {
+                    this.showModal('Name Required', 'Please enter a character name.', '⚠️');
+                    return;
+                }
+                const newChar = { id: 'custom_' + Date.now(), name, archetype: 'Custom Uploader Asset', emoji: '✨', color: '#ff007f' };
+                CHARACTERS[newChar.id] = newChar;
+                this.showModal('Registered', `${name} injected into 3D theater successfully!`, '🎨');
+                this.switchView('game');
+            }
+
+            closeMinigame() {
+                document.getElementById('modal-minigame').classList.add('hidden');
+            }
+
+            showModal(title, text, icon = '✨') {
+                document.getElementById('msg-title').innerText = title;
+                document.getElementById('msg-text').innerText = text;
+                document.getElementById('msg-icon').innerText = icon;
+                document.getElementById('modal-message').classList.remove('hidden');
+            }
+        }
+
+        const app = new AppController();
+        window.onload = () => {
+            app.init();
+        };
+    </script>
+</body>
+</html>
