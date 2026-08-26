@@ -1,0 +1,1001 @@
+<!DOCTYPE html>
+<html lang="en" class="dark" data-theme="quantum">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Quantum Utopia: 3D Universe Studio PRO</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        quantum: { 50: '#fdf4f8', 500: '#ec4899', 900: '#831843' },
+                        universe: { 500: '#6366f1', 900: '#312e81' },
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['Share Tech Mono', 'monospace'],
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <!-- Three.js and essential loaders -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/OBJLoader.js"></script>
+    <!-- Tone.js for Audio Synths and Analysis -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    
+    <style>
+        body { font-family: 'Inter', sans-serif; overflow: hidden; background: #000; touch-action: none; user-select: none; }
+        .font-mono-tech { font-family: 'Share Tech Mono', monospace; }
+        
+        #canvas-container { position: absolute; inset: 0; z-index: 0; width: 100vw; height: 100vh; }
+        #ui-layer { position: absolute; inset: 0; z-index: 10; pointer-events: none; display: flex; flex-direction: column; justify-content: space-between; overflow: hidden; }
+        .pointer-events-auto { pointer-events: auto; }
+        
+        .glass-panel { background: rgba(10, 15, 30, 0.85); backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.1); border-top: 1px solid rgba(236, 72, 153, 0.5); }
+        .glass-purple { background: rgba(40, 10, 60, 0.7); backdrop-filter: blur(24px); border: 1px solid rgba(139, 92, 246, 0.4); }
+        
+        .futuristic-btn { transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); text-transform: uppercase; letter-spacing: 1px; }
+        .futuristic-btn:active { transform: scale(0.95); }
+        .futuristic-btn.active-tab { background: rgba(236, 72, 153, 0.2); border-bottom: 2px solid #ec4899; color: #fbcfe8; }
+
+        ::-webkit-scrollbar { width: 4px; height: 4px; }
+        ::-webkit-scrollbar-track { background: rgba(0,0,0,0.2); }
+        ::-webkit-scrollbar-thumb { background: #ec4899; border-radius: 2px; }
+
+        /* Bottom Dock Drawer Animations */
+        .dock-drawer { transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s; transform: translateY(100%); opacity: 0; }
+        .dock-drawer.open { transform: translateY(0); opacity: 1; }
+
+        /* Sliders */
+        input[type=range] { appearance: none; background: rgba(255,255,255,0.1); height: 4px; border-radius: 2px; outline: none; }
+        input[type=range]::-webkit-slider-thumb { appearance: none; width: 14px; height: 14px; border-radius: 50%; background: #ec4899; box-shadow: 0 0 10px #ec4899; cursor: pointer; }
+
+        /* DOM Anchors (Scrollable HTML/TXT floating in 3D) */
+        #dom-anchors-container { position: absolute; inset: 0; pointer-events: none; z-index: 5; overflow: hidden; }
+        .dom-card {
+            position: absolute; pointer-events: auto; transform: translate(-50%, -50%);
+            background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(12px); border: 1px solid #06b6d4;
+            border-radius: 12px; padding: 16px; color: #fff; width: 300px; max-height: 400px;
+            overflow-y: auto; box-shadow: 0 10px 30px rgba(0,0,0,0.5), 0 0 15px rgba(6, 182, 212, 0.3);
+            font-size: 12px; transform-origin: center center; will-change: transform;
+            transition: opacity 0.2s;
+        }
+
+        /* Virtual Joystick (Mouse Ball) */
+        #joystick-zone {
+            position: absolute; bottom: 100px; right: 20px; width: 120px; height: 120px;
+            background: radial-gradient(circle, rgba(236,72,153,0.1) 0%, rgba(0,0,0,0.4) 100%);
+            border: 2px solid rgba(236,72,153,0.3); border-radius: 50%;
+            pointer-events: auto; touch-action: none; display: flex; justify-content: center; align-items: center; z-index: 20;
+            box-shadow: inset 0 0 20px rgba(236,72,153,0.2);
+        }
+        #joystick-knob {
+            width: 40px; height: 40px; background: radial-gradient(circle at 30% 30%, #fbcfe8, #ec4899);
+            border-radius: 50%; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.5), inset 0 -3px 5px rgba(0,0,0,0.3);
+            transition: transform 0.1s; pointer-events: none;
+        }
+
+        /* Rainbow Glow Keyframes */
+        @keyframes rainbowGlow {
+            0% { box-shadow: 0 0 10px #ff0000; border-color: #ff0000; }
+            20% { box-shadow: 0 0 10px #ffff00; border-color: #ffff00; }
+            40% { box-shadow: 0 0 10px #00ff00; border-color: #00ff00; }
+            60% { box-shadow: 0 0 10px #00ffff; border-color: #00ffff; }
+            80% { box-shadow: 0 0 10px #0000ff; border-color: #0000ff; }
+            100% { box-shadow: 0 0 10px #ff00ff; border-color: #ff00ff; }
+        }
+        .audio-reactive-ui { animation: rainbowGlow 2s linear infinite; }
+    </style>
+</head>
+<body class="text-slate-100" onload="init3D()">
+
+    <!-- 3D Canvas -->
+    <div id="canvas-container"></div>
+    
+    <!-- DOM Cards (Scrollable HTML/TXT) -->
+    <div id="dom-anchors-container"></div>
+
+    <!-- UI Overlay -->
+    <div id="ui-layer">
+        
+        <header class="pointer-events-auto p-4 flex justify-between items-start w-full pointer-events-none">
+            <div class="glass-purple p-2.5 rounded-2xl shadow-2xl flex items-center gap-3 pointer-events-auto w-full max-w-2xl mx-auto">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-pink-500 to-cyan-500 flex items-center justify-center text-xl shadow-[0_0_15px_rgba(236,72,153,0.5)]">✨</div>
+                <div class="flex-1">
+                    <h1 class="font-mono-tech font-bold text-xs sm:text-sm text-transparent bg-clip-text bg-gradient-to-r from-pink-400 to-cyan-300">QUANTUM UTOPIA V2</h1>
+                    <div class="flex gap-3 text-[10px] font-mono text-pink-200 mt-0.5">
+                        <span id="audio-status">Audio: <strong class="text-slate-400">Off</strong></span>
+                        <span>Orbit: <strong class="text-cyan-300">Free 360°</strong></span>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2">
+                    <select id="cam-perspective" onchange="changeCameraPerspective(this.value)" class="bg-slate-900 border border-pink-500/50 text-pink-300 font-mono text-[10px] rounded-lg px-2 py-1.5 outline-none focus:border-cyan-500">
+                        <option value="orbit">📷 Free Orbit</option>
+                        <option value="novel">💬 Novel Cam</option>
+                        <option value="cinematic">🎥 Auto Pan</option>
+                    </select>
+                </div>
+            </div>
+        </header>
+
+        <!-- Tool Overlay (Left) -->
+        <div class="absolute left-4 top-1/3 pointer-events-auto flex flex-col gap-2 z-20 glass-panel p-2 rounded-xl">
+            <button onclick="setToolMode('select')" id="tool-select" class="futuristic-btn p-2 rounded bg-slate-800 text-xs flex flex-col items-center gap-1 active-tab border border-slate-600"><span class="text-lg">👆</span> <span class="text-[8px] font-mono">SEL</span></button>
+            <button onclick="setToolMode('move')" id="tool-move" class="futuristic-btn p-2 rounded bg-slate-800 text-xs flex flex-col items-center gap-1 border border-slate-600"><span class="text-lg">✋</span> <span class="text-[8px] font-mono">MOVE</span></button>
+        </div>
+
+        <!-- Virtual Joystick (Mouse Ball) -->
+        <div id="joystick-zone">
+            <div id="joystick-knob"></div>
+            <div class="absolute -bottom-6 text-[9px] font-mono text-pink-400 opacity-70">PAN SCROLL</div>
+        </div>
+
+        <footer class="pointer-events-none p-4 w-full flex flex-col items-center justify-end z-30">
+            
+            <!-- Dynamic Dock Content Area -->
+            <div id="dock-content" class="dock-drawer pointer-events-auto glass-panel w-full max-w-4xl p-4 rounded-t-3xl shadow-2xl mb-0 max-h-[40vh] overflow-hidden flex flex-col">
+                
+                <!-- Tab 1: Spawner -->
+                <div id="tab-spawner" class="dock-tab-pane flex-1 overflow-y-auto h-full hidden grid grid-cols-2 md:grid-cols-4 gap-3 pb-4">
+                    <div class="col-span-full text-[10px] text-pink-400 font-mono mb-1">Standard Geometries</div>
+                    <button onclick="spawnGlassyObject('box')" class="p-2 bg-slate-800/80 rounded-xl border border-cyan-500/30 hover:bg-cyan-900/40 text-[10px] flex flex-col items-center gap-1"><span class="text-xl">🧊</span>Cube</button>
+                    <button onclick="spawnGlassyObject('sphere')" class="p-2 bg-slate-800/80 rounded-xl border border-indigo-500/30 hover:bg-indigo-900/40 text-[10px] flex flex-col items-center gap-1"><span class="text-xl">🔮</span>Sphere</button>
+                    <button onclick="spawnDefaultPaperdoll()" class="p-2 bg-slate-800/80 rounded-xl border border-pink-500/30 hover:bg-pink-900/40 text-[10px] flex flex-col items-center gap-1"><span class="text-xl">🐰</span>Character</button>
+                    
+                    <div class="col-span-full text-[10px] text-pink-400 font-mono mt-2 mb-1 border-t border-slate-700 pt-2">Suits & Gems</div>
+                    <button onclick="spawnShape('diamond')" class="p-2 bg-slate-800/80 rounded-xl border border-blue-500/30 hover:bg-blue-900/40 text-[10px] flex flex-col items-center gap-1"><span class="text-xl">💎</span>Gem</button>
+                    <button onclick="spawnShape('heart')" class="p-2 bg-slate-800/80 rounded-xl border border-red-500/30 hover:bg-red-900/40 text-[10px] flex flex-col items-center gap-1"><span class="text-xl text-red-500">♥️</span>Heart</button>
+                    <button onclick="spawnShape('spade')" class="p-2 bg-slate-800/80 rounded-xl border border-slate-500/30 hover:bg-slate-700/40 text-[10px] flex flex-col items-center gap-1"><span class="text-xl">♠️</span>Spade</button>
+                    <button onclick="spawnShape('club')" class="p-2 bg-slate-800/80 rounded-xl border border-green-500/30 hover:bg-green-900/40 text-[10px] flex flex-col items-center gap-1"><span class="text-xl text-green-500">♣️</span>Club</button>
+                </div>
+
+                <!-- Tab 2: Universal Upload Pipeline -->
+                <div id="tab-upload" class="dock-tab-pane flex-1 overflow-y-auto h-full hidden flex flex-col items-center justify-center p-4">
+                    <div class="text-center max-w-md mx-auto">
+                        <div class="w-16 h-16 mx-auto mb-3 bg-gradient-to-tr from-pink-600 to-indigo-600 rounded-2xl flex items-center justify-center shadow-lg transform rotate-3">
+                            <span class="text-2xl -rotate-3">☁️</span>
+                        </div>
+                        <h3 class="font-bold text-slate-100 mb-1">Universal File Pipeline</h3>
+                        <p class="text-[10px] text-slate-400 mb-4 font-mono">Supported: HTML, TXT, MP3, M4A, PNG, JPG, GLB, OBJ</p>
+                        
+                        <label class="relative inline-flex group cursor-pointer">
+                            <input type="file" id="universal-upload" multiple class="hidden" onchange="handleUniversalUpload(event)">
+                            <div class="px-6 py-2.5 bg-cyan-600 group-hover:bg-cyan-500 text-white rounded-xl font-bold text-xs shadow-[0_0_15px_rgba(6,182,212,0.4)] transition-all">
+                                + Select Files to Inject
+                            </div>
+                        </label>
+                        <p class="text-[9px] text-slate-500 mt-4 italic">Try loading "IMG_6483_225f82.jpg" or an MP3 for synth reactions!</p>
+                    </div>
+                </div>
+
+                <!-- Tab 3: Properties -->
+                <div id="tab-properties" class="dock-tab-pane flex-1 overflow-y-auto h-full hidden">
+                    <div id="no-selection-msg" class="text-xs text-slate-500 text-center py-6">Select an object to edit properties</div>
+                    <div id="properties-content" class="hidden grid grid-cols-1 md:grid-cols-2 gap-4 pb-2">
+                        <div class="space-y-3">
+                            <div><label class="text-[9px] text-pink-300">Name</label><input type="text" id="prop-name" class="w-full bg-slate-900 border border-slate-700 rounded p-1 text-xs text-white" onchange="updateSelectedName(this.value)"></div>
+                            <div class="flex justify-between items-center"><label class="text-[10px] text-slate-300">Color</label><input type="color" id="prop-color" oninput="updateObjectProperty('color', this.value)" class="w-8 h-8 rounded cursor-pointer bg-transparent border-none p-0"></div>
+                            <div>
+                                <div class="flex justify-between"><label class="text-[10px] text-slate-300">Emissive Glow</label><span id="val-emission" class="text-[9px] text-cyan-300">0.0</span></div>
+                                <input type="range" id="prop-emission" min="0" max="2" step="0.1" value="0" oninput="updateObjectProperty('emission', this.value)" class="w-full">
+                            </div>
+                        </div>
+                        <div class="space-y-2">
+                            <label class="text-[9px] text-pink-300 font-bold">Scale (X, Y, Z)</label>
+                            <div class="flex gap-2">
+                                <input type="number" id="prop-scale-x" step="0.1" onchange="updateObjectProperty('scaleX', this.value)" class="w-full bg-slate-800 text-[10px] p-1 rounded text-white text-center">
+                                <input type="number" id="prop-scale-y" step="0.1" onchange="updateObjectProperty('scaleY', this.value)" class="w-full bg-slate-800 text-[10px] p-1 rounded text-white text-center">
+                                <input type="number" id="prop-scale-z" step="0.1" onchange="updateObjectProperty('scaleZ', this.value)" class="w-full bg-slate-800 text-[10px] p-1 rounded text-white text-center">
+                            </div>
+                            <label class="text-[9px] text-pink-300 font-bold mt-2 block">Audio Reactive (Rainbow Synth)</label>
+                            <button id="prop-audio-react" onclick="toggleAudioReactivity()" class="w-full py-1.5 bg-slate-800 border border-slate-600 rounded text-[10px] text-slate-300 hover:border-pink-500 transition">Enable Audio Visualizer</button>
+                            
+                            <button onclick="deleteSelectedObject()" class="w-full py-1.5 mt-2 bg-red-900/30 hover:bg-red-800 border border-red-500/50 rounded text-red-300 text-[10px] font-bold transition">🗑️ Delete Object</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tab 4: Inventory (Scene Graph) -->
+                <div id="tab-inventory" class="dock-tab-pane flex-1 overflow-y-auto h-full hidden">
+                    <div class="flex justify-between items-center mb-2 border-b border-slate-700 pb-2">
+                        <span class="text-[10px] font-mono text-cyan-300">SCENE GRAPH</span>
+                        <span class="text-[10px] text-slate-400">Total: <span id="inv-count">0</span></span>
+                    </div>
+                    <ul id="inventory-list" class="space-y-1">
+                        <!-- Populated dynamically -->
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Dock Navigation Bar -->
+            <nav class="pointer-events-auto glass-panel w-full max-w-4xl p-1 rounded-full shadow-[0_10px_40px_rgba(0,0,0,0.8)] flex justify-between items-center mt-2 relative z-40 bg-slate-900/90">
+                <div class="flex gap-1 w-full justify-center">
+                    <button onclick="openDockTab('spawner', this)" class="dock-btn active-tab futuristic-btn px-4 py-3 rounded-full text-[10px] font-bold text-slate-400 hover:text-white flex-1 max-w-[120px]">✨ Spawn</button>
+                    <button onclick="openDockTab('upload', this)" class="dock-btn futuristic-btn px-4 py-3 rounded-full text-[10px] font-bold text-slate-400 hover:text-white flex-1 max-w-[120px]">☁️ Upload</button>
+                    <button onclick="openDockTab('properties', this)" id="nav-prop-btn" class="dock-btn futuristic-btn px-4 py-3 rounded-full text-[10px] font-bold text-slate-400 hover:text-white flex-1 max-w-[120px]">⚙️ Props</button>
+                    <button onclick="openDockTab('inventory', this)" class="dock-btn futuristic-btn px-4 py-3 rounded-full text-[10px] font-bold text-slate-400 hover:text-white flex-1 max-w-[120px]">📋 Inventory</button>
+                    <button onclick="toggleDock()" id="dock-toggle-btn" class="futuristic-btn px-4 py-3 rounded-full text-[10px] font-bold text-pink-400 hover:bg-pink-900/30 border border-transparent flex-1 max-w-[80px]">▼ CLOSE</button>
+                </div>
+            </nav>
+        </footer>
+    </div>
+
+    <!-- Notification Toast -->
+    <div id="toast-container" class="absolute top-20 right-4 z-50 pointer-events-none flex flex-col gap-2"></div>
+
+    <script>
+        let scene, camera, renderer, orbitControls;
+        let objects3D = []; 
+        let activeTool = 'select'; // select, move
+        let selectedObject = null;
+        let selectionBox = null;
+        let raycaster = new THREE.Raycaster();
+        let mouse = new THREE.Vector2();
+        
+        let isDockOpen = true;
+        let isDragging = false;
+        let dragOffset = new THREE.Vector3();
+        let dragPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
+        
+        let joyActive = false;
+        let joyCenter = {x:0, y:0};
+        let joyOffset = {x:0, y:0};
+
+        let audioContext, analyser, tonePlayer;
+        let isAudioPlaying = false;
+        let domCards = [];
+
+        window.addEventListener('DOMContentLoaded', () => {
+            try {
+                init3D();
+            } catch (err) {
+                console.error("Initialization error:", err);
+            }
+        });
+
+        function init3D() {
+            const container = document.getElementById('canvas-container');
+            if(!container) return;
+            
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x050510);
+            scene.fog = new THREE.FogExp2(0x050510, 0.015);
+
+            camera = new THREE.PerspectiveCamera(55, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.set(0, 6, 15);
+
+            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+            container.appendChild(renderer.domElement);
+
+            orbitControls = new THREE.OrbitControls(camera, renderer.domElement);
+            orbitControls.enableDamping = true;
+            orbitControls.dampingFactor = 0.05;
+            orbitControls.target.set(0, 1.5, 0);
+            orbitControls.maxDistance = 50;
+
+            scene.add(new THREE.AmbientLight(0x222233, 1.5));
+            const dirLight = new THREE.DirectionalLight(0xffffff, 1.2);
+            dirLight.position.set(10, 15, 10);
+            dirLight.castShadow = true;
+            scene.add(dirLight);
+
+            const pinkLight = new THREE.PointLight(0xec4899, 2, 20);
+            pinkLight.position.set(-5, 5, 0);
+            scene.add(pinkLight);
+            
+            const cyanLight = new THREE.PointLight(0x06b6d4, 2, 20);
+            cyanLight.position.set(5, 5, 0);
+            scene.add(cyanLight);
+
+            const gridHelper = new THREE.GridHelper(60, 60, 0xec4899, 0x1e1b4b);
+            gridHelper.position.y = 0;
+            scene.add(gridHelper);
+            
+            selectionBox = new THREE.BoxHelper(new THREE.Mesh(new THREE.BoxGeometry(1,1,1)), 0x00FF00);
+            selectionBox.visible = false;
+            scene.add(selectionBox);
+
+            createStarfield();
+            spawnDefaultPaperdoll();
+
+            window.addEventListener('resize', onWindowResize);
+            renderer.domElement.addEventListener('pointerdown', onPointerDown);
+            renderer.domElement.addEventListener('pointermove', onPointerMove);
+            window.addEventListener('pointerup', onPointerUp);
+            
+            setupJoystick();
+            openDockTab('spawner', document.querySelector('.dock-btn'));
+
+            animate();
+            updateInventory();
+        }
+
+        function changeCameraPerspective(mode) {
+            if (!camera || !orbitControls) return;
+            if (mode === 'novel') {
+                camera.position.set(0, 3, 6);
+                orbitControls.target.set(0, 2, 0);
+            } else if (mode === 'cinematic') {
+                camera.position.set(12, 8, 12);
+                orbitControls.target.set(0, 1, 0);
+            } else {
+                camera.position.set(0, 6, 15);
+                orbitControls.target.set(0, 1.5, 0);
+            }
+            orbitControls.update();
+            showToast(`Camera switched to ${mode}`);
+        }
+
+        function createStarfield() {
+            const starGeo = new THREE.BufferGeometry();
+            const posArray = new Float32Array(3000 * 3);
+            for(let i = 0; i < 9000; i++) posArray[i] = (Math.random() - 0.5) * 100;
+            starGeo.setAttribute('position', new THREE.BufferAttribute(posArray, 3));
+            const starMat = new THREE.PointsMaterial({ size: 0.1, color: 0x8b5cf6, transparent: true, opacity: 0.8 });
+            scene.add(new THREE.Points(starGeo, starMat));
+        }
+
+        function createStandardMaterial(colorHex, isGlass = false) {
+            if(isGlass) {
+                return new THREE.MeshPhysicalMaterial({
+                    color: colorHex, metalness: 0.1, roughness: 0.1,
+                    transmission: 0.9, opacity: 1, transparent: true,
+                    thickness: 0.5, clearcoat: 1.0, emissive: 0x000000
+                });
+            }
+            return new THREE.MeshStandardMaterial({ color: colorHex, roughness: 0.4, metalness: 0.1 });
+        }
+
+        function spawnGlassyObject(type) {
+            const group = new THREE.Group();
+            group.position.set((Math.random()-0.5)*8, 2, (Math.random()-0.5)*8);
+            group.userData = { type: type, name: `Glass ${type.charAt(0).toUpperCase()+type.slice(1)}`, isAudioReactive: false };
+
+            const geometry = type === 'box' ? new THREE.BoxGeometry(2, 2, 2) : new THREE.SphereGeometry(1.2, 32, 32);
+            const material = createStandardMaterial(0x8b5cf6, true);
+
+            const mesh = new THREE.Mesh(geometry, material);
+            mesh.castShadow = true; mesh.receiveShadow = true;
+            group.add(mesh);
+            group.userData.mainMaterial = material;
+            group.userData.mesh = mesh;
+
+            finalizeSpawn(group);
+        }
+
+        function spawnShape(suit) {
+            const group = new THREE.Group();
+            group.position.set((Math.random()-0.5)*8, 2, (Math.random()-0.5)*8);
+            
+            let color = 0xffffff, icon = '';
+            if(suit === 'heart') { color = 0xff0000; icon = '♥️'; }
+            if(suit === 'diamond') { color = 0x00ffff; icon = '💎'; }
+            if(suit === 'club') { color = 0x00ff00; icon = '♣️'; }
+            if(suit === 'spade') { color = 0x888888; icon = '♠️'; }
+            
+            group.userData = { type: 'shape', name: `${icon} ${suit.toUpperCase()}`, isAudioReactive: false };
+
+            const shape = new THREE.Shape();
+            const x = 0, y = 0;
+            
+            if(suit === 'heart') {
+                shape.moveTo( x + 5, y + 5 );
+                shape.bezierCurveTo( x + 5, y + 5, x + 4, y, x, y );
+                shape.bezierCurveTo( x - 6, y, x - 6, y + 7,x - 6, y + 7 );
+                shape.bezierCurveTo( x - 6, y + 11, x - 3, y + 15.4, x + 5, y + 19 );
+                shape.bezierCurveTo( x + 12, y + 15.4, x + 16, y + 11, x + 16, y + 7 );
+                shape.bezierCurveTo( x + 16, y + 7, x + 16, y, x + 10, y );
+                shape.bezierCurveTo( x + 7, y, x + 5, y + 5, x + 5, y + 5 );
+            } else if (suit === 'diamond') {
+                shape.moveTo(0, 10); shape.lineTo(5, 0); shape.lineTo(0, -10); shape.lineTo(-5, 0); shape.lineTo(0, 10);
+            } else if (suit === 'spade') {
+                shape.moveTo(0, 10); shape.lineTo(5, 0); shape.bezierCurveTo(10, -5, 5, -10, 0, -5); shape.bezierCurveTo(-5, -10, -10, -5, -5, 0); shape.lineTo(0, 10);
+            } else {
+                shape.absarc(0, 5, 4, 0, Math.PI*2, false);
+                shape.absarc(4, -2, 4, 0, Math.PI*2, false);
+                shape.absarc(-4, -2, 4, 0, Math.PI*2, false);
+            }
+
+            const extrudeSettings = { depth: 2, bevelEnabled: true, bevelSegments: 2, steps: 1, bevelSize: 0.5, bevelThickness: 0.5 };
+            const geometry = new THREE.ExtrudeGeometry( shape, extrudeSettings );
+            geometry.center();
+            if(suit === 'heart' || suit === 'spade' || suit === 'club') geometry.rotateZ(Math.PI);
+            geometry.scale(0.1, 0.1, 0.1);
+
+            const material = createStandardMaterial(color, false);
+            material.emissive.setHex(color);
+            material.emissiveIntensity = 0.2;
+
+            const mesh = new THREE.Mesh(geometry, material);
+            mesh.castShadow = true;
+            group.add(mesh);
+            group.userData.mainMaterial = material;
+            group.userData.mesh = mesh;
+
+            finalizeSpawn(group);
+        }
+
+        function spawnDefaultPaperdoll() {
+            createPaperdollMesh("Guide Bunny", 0, 0, "🐰");
+        }
+
+        function createPaperdollMesh(name, x, z, emoji, customImgUrl = null) {
+            const group = new THREE.Group();
+            group.position.set(x, 1.5, z);
+            group.userData = { type: 'paperdoll', name: name, isPaperdoll: true };
+
+            const geometry = new THREE.PlaneGeometry(2.5, 3.5);
+            let material;
+
+            if (customImgUrl) {
+                const texture = new THREE.TextureLoader().load(customImgUrl);
+                material = new THREE.MeshStandardMaterial({ map: texture, transparent: true, side: THREE.DoubleSide, roughness: 0.2 });
+            } else {
+                const canvas = document.createElement('canvas'); canvas.width = 256; canvas.height = 356;
+                const ctx = canvas.getContext('2d');
+                ctx.fillStyle = '#ec4899'; ctx.roundRect(10, 10, 236, 336, 20); ctx.fill();
+                ctx.fillStyle = '#ffffff'; ctx.font = 'bold 24px Inter'; ctx.textAlign = 'center';
+                ctx.fillText(name, 128, 60); ctx.font = '80px sans-serif'; ctx.fillText(emoji, 128, 190);
+                material = new THREE.MeshStandardMaterial({ map: new THREE.CanvasTexture(canvas), transparent: true, side: THREE.DoubleSide });
+            }
+
+            const mesh = new THREE.Mesh(geometry, material);
+            mesh.castShadow = true; group.add(mesh);
+            group.userData.mainMaterial = material; group.userData.mesh = mesh;
+
+            const ringGeo = new THREE.TorusGeometry(1.5, 0.05, 16, 50);
+            const ring = new THREE.Mesh(ringGeo, new THREE.MeshBasicMaterial({ color: 0x06b6d4, wireframe: true }));
+            ring.rotation.x = Math.PI / 2; ring.position.y = -1.5;
+            group.add(ring);
+
+            finalizeSpawn(group);
+        }
+
+        function finalizeSpawn(group) {
+            scene.add(group);
+            objects3D.push(group);
+            selectObject(group);
+            updateInventory();
+            showToast(`Spawned: ${group.userData.name}`);
+        }
+
+        function getIntersects(e) {
+            mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+            raycaster.setFromCamera(mouse, camera);
+            let meshes = [];
+            objects3D.forEach(g => g.children.forEach(c => { if(c.isMesh && !c.material.wireframe) meshes.push(c); }));
+            return raycaster.intersectObjects(meshes);
+        }
+
+        function onPointerDown(e) {
+            if(!renderer || e.target !== renderer.domElement) return;
+
+            const intersects = getIntersects(e);
+
+            if (intersects.length > 0) {
+                const hit = intersects[0];
+                const parentGroup = hit.object.parent;
+
+                orbitControls.enabled = false; 
+
+                if (activeTool === 'select') {
+                    selectObject(parentGroup);
+                } 
+                else if (activeTool === 'move') {
+                    selectObject(parentGroup);
+                    isDragging = true;
+                    raycaster.ray.intersectPlane(dragPlane, dragOffset);
+                    dragOffset.sub(parentGroup.position);
+                }
+            } else {
+                if(!isDragging) {
+                    selectedObject = null;
+                    if(selectionBox) selectionBox.visible = false;
+                    updatePropertiesUI();
+                    if(orbitControls) orbitControls.enabled = true;
+                }
+            }
+        }
+
+        function onPointerMove(e) {
+            if (isDragging && selectedObject && activeTool === 'move') {
+                mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+                mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+                raycaster.setFromCamera(mouse, camera);
+                let intersectPoint = new THREE.Vector3();
+                raycaster.ray.intersectPlane(dragPlane, intersectPoint);
+                if(intersectPoint) {
+                    selectedObject.position.copy(intersectPoint.sub(dragOffset));
+                    if(selectionBox) selectionBox.setFromObject(selectedObject);
+                }
+            }
+        }
+
+        function onPointerUp(e) {
+            isDragging = false;
+            if(orbitControls) orbitControls.enabled = true; 
+        }
+
+        function selectObject(group) {
+            selectedObject = group;
+            if(selectionBox) {
+                selectionBox.setFromObject(group);
+                selectionBox.visible = true;
+            }
+            updatePropertiesUI();
+            
+            const propTab = document.getElementById('tab-properties');
+            const propNavBtn = document.getElementById('nav-prop-btn');
+            if(propTab && propTab.classList.contains('hidden') && propNavBtn) {
+                openDockTab('properties', propNavBtn);
+            }
+            if(!isDockOpen) toggleDock();
+        }
+
+        function setToolMode(mode) {
+            activeTool = mode;
+            const selTool = document.getElementById('tool-select');
+            const movTool = document.getElementById('tool-move');
+            if(selTool) selTool.classList.toggle('active-tab', mode === 'select');
+            if(movTool) movTool.classList.toggle('active-tab', mode === 'move');
+        }
+
+        function updatePropertiesUI() {
+            const noSelMsg = document.getElementById('no-selection-msg');
+            const propContent = document.getElementById('properties-content');
+            if(!noSelMsg || !propContent) return;
+
+            if (!selectedObject) {
+                noSelMsg.classList.remove('hidden');
+                propContent.classList.add('hidden');
+                return;
+            }
+            
+            noSelMsg.classList.add('hidden');
+            propContent.classList.remove('hidden');
+            
+            const propName = document.getElementById('prop-name');
+            if(propName) propName.value = selectedObject.userData.name;
+            
+            if (selectedObject.userData.mainMaterial) {
+                const mat = selectedObject.userData.mainMaterial;
+                const propColor = document.getElementById('prop-color');
+                const propEmission = document.getElementById('prop-emission');
+                const valEmission = document.getElementById('val-emission');
+                
+                if(propColor && mat.color) propColor.value = '#' + mat.color.getHexString();
+                if(propEmission) propEmission.value = mat.emissiveIntensity || 0;
+                if(valEmission) valEmission.innerText = (mat.emissiveIntensity || 0).toFixed(1);
+            }
+
+            const sx = document.getElementById('prop-scale-x');
+            const sy = document.getElementById('prop-scale-y');
+            const sz = document.getElementById('prop-scale-z');
+            if(sx) sx.value = selectedObject.scale.x.toFixed(1);
+            if(sy) sy.value = selectedObject.scale.y.toFixed(1);
+            if(sz) sz.value = selectedObject.scale.z.toFixed(1);
+
+            const arBtn = document.getElementById('prop-audio-react');
+            if(arBtn) {
+                if(selectedObject.userData.isAudioReactive) {
+                    arBtn.classList.add('bg-pink-600', 'text-white', 'border-pink-400');
+                    arBtn.innerText = "Audio Reactive: ON";
+                } else {
+                    arBtn.classList.remove('bg-pink-600', 'text-white', 'border-pink-400');
+                    arBtn.innerText = "Enable Audio Visualizer";
+                }
+            }
+        }
+
+        function updateObjectProperty(prop, value) {
+            if(!selectedObject) return;
+            const mat = selectedObject.userData.mainMaterial;
+            const val = parseFloat(value);
+
+            switch(prop) {
+                case 'color': if(mat) { mat.color.set(value); if(mat.emissive) mat.emissive.set(value); } break;
+                case 'emission':
+                    if(mat) {
+                        mat.emissiveIntensity = val;
+                        const valEmission = document.getElementById('val-emission');
+                        if(valEmission) valEmission.innerText = val.toFixed(1);
+                    }
+                    break;
+                case 'scaleX': selectedObject.scale.x = val; break;
+                case 'scaleY': selectedObject.scale.y = val; break;
+                case 'scaleZ': selectedObject.scale.z = val; break;
+            }
+            if(selectionBox) selectionBox.setFromObject(selectedObject);
+        }
+
+        function updateSelectedName(val) {
+            if(selectedObject) {
+                selectedObject.userData.name = val;
+                updateInventory();
+            }
+        }
+
+        function toggleAudioReactivity() {
+            if(!selectedObject) return;
+            selectedObject.userData.isAudioReactive = !selectedObject.userData.isAudioReactive;
+            
+            const uiLayer = document.getElementById('ui-layer');
+            if(selectedObject.userData.isAudioReactive) {
+                if(!Tone.context || Tone.context.state !== 'running') {
+                    showToast("Hint: Upload an MP3/M4A in Upload tab to see the effect!");
+                }
+                if(uiLayer) uiLayer.classList.add('audio-reactive-ui');
+            } else {
+                const anyReactive = objects3D.some(o => o.userData.isAudioReactive);
+                if(!anyReactive && uiLayer) uiLayer.classList.remove('audio-reactive-ui');
+            }
+            updatePropertiesUI();
+        }
+
+        function deleteSelectedObject() {
+            if(!selectedObject) return;
+            scene.remove(selectedObject);
+            domCards = domCards.filter(c => {
+                if(c.obj === selectedObject) { c.el.remove(); return false; }
+                return true;
+            });
+            objects3D = objects3D.filter(o => o !== selectedObject);
+            selectedObject = null;
+            if(selectionBox) selectionBox.visible = false;
+            updatePropertiesUI();
+            updateInventory();
+            showToast("Object disintegrated.");
+        }
+
+        function toggleDock() {
+            isDockOpen = !isDockOpen;
+            const dock = document.getElementById('dock-content');
+            const btn = document.getElementById('dock-toggle-btn');
+            if(!dock || !btn) return;
+            
+            if(isDockOpen) {
+                dock.classList.add('open');
+                btn.innerText = "▼ CLOSE";
+                btn.classList.add('text-pink-400');
+                btn.classList.remove('text-slate-400');
+            } else {
+                dock.classList.remove('open');
+                btn.innerText = "▲ OPEN";
+                btn.classList.remove('text-pink-400');
+                btn.classList.add('text-slate-400');
+            }
+        }
+
+        function openDockTab(tabId, btnElement) {
+            if(!isDockOpen) toggleDock();
+            
+            document.querySelectorAll('.dock-tab-pane').forEach(el => el.classList.add('hidden'));
+            const targetTab = document.getElementById(`tab-${tabId}`);
+            if(targetTab) targetTab.classList.remove('hidden');
+            
+            document.querySelectorAll('.dock-btn').forEach(el => el.classList.remove('active-tab'));
+            if(btnElement) btnElement.classList.add('active-tab');
+        }
+
+        function updateInventory() {
+            const list = document.getElementById('inventory-list');
+            const countEl = document.getElementById('inv-count');
+            if(!list || !countEl) return;
+            
+            list.innerHTML = '';
+            countEl.innerText = objects3D.length;
+            
+            objects3D.forEach((obj, index) => {
+                const li = document.createElement('li');
+                li.className = "p-2 bg-slate-800 rounded flex justify-between items-center cursor-pointer hover:bg-slate-700 transition";
+                li.onclick = () => selectObject(obj);
+                
+                const isSel = (obj === selectedObject);
+                if(isSel) li.classList.add('border', 'border-pink-500');
+
+                let icon = '📦';
+                if(obj.userData.type === 'paperdoll') icon = '🐰';
+                else if(obj.userData.type === 'shape') icon = obj.userData.name.split(' ')[0] || '🔹';
+                else if(obj.userData.type === 'file-3d') icon = '🎮';
+                else if(obj.userData.type === 'file-image') icon = '🖼️';
+                else if(obj.userData.type === 'file-html') icon = '📄';
+
+                li.innerHTML = `
+                    <span class="text-xs font-mono truncate text-slate-300"><span class="mr-2">${icon}</span>${obj.userData.name}</span>
+                    ${obj.userData.isAudioReactive ? '<span class="text-[10px] text-pink-400">♫</span>' : ''}
+                `;
+                list.appendChild(li);
+            });
+        }
+
+        async function handleUniversalUpload(event) {
+            const files = event.target.files;
+            if(!files || files.length === 0) return;
+
+            for(let file of files) {
+                const ext = file.name.split('.').pop().toLowerCase();
+                const url = URL.createObjectURL(file);
+                
+                showToast(`Processing: ${file.name}...`);
+
+                if(['png', 'jpg', 'jpeg', 'gif'].includes(ext)) {
+                    createPaperdollMesh(file.name, (Math.random()-0.5)*4, (Math.random()-0.5)*4, "", url);
+                }
+                else if(['mp3', 'm4a', 'wav'].includes(ext)) {
+                    setupAudioVisualizer(url, file.name);
+                }
+                else if(['txt', 'html', 'htm'].includes(ext)) {
+                    const text = await file.text();
+                    createDOMCardAnchor(file.name, text, ext === 'html');
+                }
+                else if(['glb', 'gltf'].includes(ext)) {
+                    if(typeof THREE.GLTFLoader !== 'undefined') {
+                        const loader = new THREE.GLTFLoader();
+                        loader.load(url, (gltf) => {
+                            const model = gltf.scene;
+                            model.position.set((Math.random()-0.5)*5, 0, (Math.random()-0.5)*5);
+                            const box = new THREE.Box3().setFromObject(model);
+                            const center = box.getCenter(new THREE.Vector3());
+                            model.position.sub(center);
+                            
+                            const wrapper = new THREE.Group();
+                            wrapper.add(model);
+                            wrapper.position.set(0, 1.5, 0);
+                            wrapper.userData = { type: 'file-3d', name: file.name, isAudioReactive: false };
+                            
+                            model.traverse((child) => {
+                                if(child.isMesh) {
+                                    child.castShadow = true;
+                                    if(!wrapper.userData.mainMaterial) wrapper.userData.mainMaterial = child.material;
+                                }
+                            });
+                            
+                            finalizeSpawn(wrapper);
+                        });
+                    }
+                }
+                else if (ext === 'obj') {
+                    if(typeof THREE.OBJLoader !== 'undefined') {
+                        const loader = new THREE.OBJLoader();
+                        loader.load(url, (obj) => {
+                            const material = createStandardMaterial(0xcccccc, false);
+                            obj.traverse((child) => { if(child.isMesh) child.material = material; });
+                            
+                            const box = new THREE.Box3().setFromObject(obj);
+                            const center = box.getCenter(new THREE.Vector3());
+                            obj.position.sub(center);
+                            
+                            const wrapper = new THREE.Group();
+                            wrapper.add(obj);
+                            wrapper.position.set(0, 1.5, 0);
+                            wrapper.userData = { type: 'file-3d', name: file.name, isAudioReactive: false, mainMaterial: material };
+                            
+                            finalizeSpawn(wrapper);
+                        });
+                    }
+                } else {
+                    showToast(`Format .${ext} added as raw text card.`);
+                    const text = await file.text();
+                    createDOMCardAnchor(file.name, text, false);
+                }
+            }
+            event.target.value = '';
+        }
+
+        async function setupAudioVisualizer(url, name) {
+            if(typeof Tone === 'undefined') return;
+            if(!Tone.context) await Tone.start();
+            
+            if(tonePlayer) { tonePlayer.stop(); tonePlayer.dispose(); }
+            
+            analyser = new Tone.Analyser("fft", 64);
+            tonePlayer = new Tone.Player(url).connect(analyser).toDestination();
+            tonePlayer.autostart = true;
+            tonePlayer.loop = true;
+            
+            const audioStatus = document.getElementById('audio-status');
+            if(audioStatus) audioStatus.innerHTML = `Audio: <strong class="text-pink-400 font-bold animate-pulse">Playing (${name})</strong>`;
+            showToast(`Audio Synth pipeline established!`);
+            isAudioPlaying = true;
+        }
+
+        function createDOMCardAnchor(name, content, isHTML) {
+            const group = new THREE.Group();
+            group.position.set((Math.random()-0.5)*5, 3, (Math.random()-0.5)*5);
+            group.userData = { type: 'file-html', name: name, isAudioReactive: false };
+            
+            const geo = new THREE.PlaneGeometry(1.5, 2);
+            const mat = new THREE.MeshBasicMaterial({ color: 0x06b6d4, wireframe: true, transparent: true, opacity: 0.3 });
+            const mesh = new THREE.Mesh(geo, mat);
+            group.add(mesh);
+            
+            finalizeSpawn(group);
+
+            const container = document.getElementById('dom-anchors-container');
+            if(!container) return;
+            
+            const card = document.createElement('div');
+            card.className = 'dom-card';
+            
+            const header = document.createElement('div');
+            header.className = 'border-b border-cyan-500/30 pb-2 mb-2 font-mono text-cyan-300 font-bold truncate flex justify-between';
+            header.innerHTML = `<span>📄 ${name}</span> <span class="text-[8px] text-slate-400">(Scrollable)</span>`;
+            
+            const body = document.createElement('div');
+            if(isHTML) {
+                body.innerHTML = content;
+            } else {
+                body.innerHTML = `<pre class="whitespace-pre-wrap font-mono text-[10px] text-slate-300">${content}</pre>`;
+            }
+
+            card.appendChild(header);
+            card.appendChild(body);
+            
+            card.addEventListener('wheel', e => e.stopPropagation());
+            card.addEventListener('pointerdown', e => e.stopPropagation());
+            card.addEventListener('pointermove', e => e.stopPropagation());
+            
+            container.appendChild(card);
+            domCards.push({ el: card, obj: group });
+        }
+
+        function setupJoystick() {
+            const zone = document.getElementById('joystick-zone');
+            const knob = document.getElementById('joystick-knob');
+            if(!zone || !knob) return;
+            
+            const handleStart = (e) => {
+                e.preventDefault();
+                joyActive = true;
+                const rect = zone.getBoundingClientRect();
+                joyCenter = { x: rect.left + rect.width/2, y: rect.top + rect.height/2 };
+                updateJoy(e.clientX || e.touches[0].clientX, e.clientY || e.touches[0].clientY);
+            };
+            
+            const handleMove = (e) => {
+                if(!joyActive) return;
+                e.preventDefault();
+                updateJoy(e.clientX || e.touches[0].clientX, e.clientY || e.touches[0].clientY);
+            };
+            
+            const handleEnd = (e) => {
+                joyActive = false;
+                joyOffset = {x:0, y:0};
+                knob.style.transform = `translate(-50%, -50%)`;
+            };
+            
+            const updateJoy = (clientX, clientY) => {
+                let dx = clientX - joyCenter.x;
+                let dy = clientY - joyCenter.y;
+                const maxDist = 40;
+                const dist = Math.sqrt(dx*dx + dy*dy);
+                if(dist > maxDist) {
+                    dx = (dx/dist) * maxDist;
+                    dy = (dy/dist) * maxDist;
+                }
+                knob.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`;
+                joyOffset = { x: dx/maxDist, y: dy/maxDist };
+            };
+
+            zone.addEventListener('mousedown', handleStart);
+            window.addEventListener('mousemove', handleMove);
+            window.addEventListener('mouseup', handleEnd);
+            
+            zone.addEventListener('touchstart', handleStart, {passive: false});
+            window.addEventListener('touchmove', handleMove, {passive: false});
+            window.addEventListener('touchend', handleEnd);
+        }
+
+        function updateDOMAnchors() {
+            domCards.forEach(card => {
+                const vector = card.obj.position.clone();
+                vector.project(camera);
+                
+                const x = (vector.x * .5 + .5) * window.innerWidth;
+                const y = (vector.y * -.5 + .5) * window.innerHeight;
+                
+                if(vector.z > 1) {
+                    card.el.style.opacity = '0';
+                } else {
+                    card.el.style.opacity = '1';
+                    card.el.style.transform = `translate(-50%, -50%) translate(${x}px, ${y}px)`;
+                }
+            });
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            const time = Date.now() * 0.001;
+
+            if(joyActive && camera && orbitControls) {
+                const moveSpeed = 0.2;
+                const forward = new THREE.Vector3(0,0,-1).applyQuaternion(camera.quaternion);
+                forward.y = 0; forward.normalize();
+                const right = new THREE.Vector3(1,0,0).applyQuaternion(camera.quaternion);
+                right.y = 0; right.normalize();
+                
+                const moveVec = forward.multiplyScalar(-joyOffset.y * moveSpeed).add(right.multiplyScalar(joyOffset.x * moveSpeed));
+                camera.position.add(moveVec);
+                orbitControls.target.add(moveVec);
+            }
+
+            if(orbitControls) orbitControls.update();
+
+            let audioValues = null;
+            if(isAudioPlaying && analyser) {
+                audioValues = analyser.getValue();
+            }
+
+            objects3D.forEach((grp, i) => {
+                if(grp.userData.isPaperdoll || grp.userData.type === 'file-html') {
+                    if(camera) grp.quaternion.copy(camera.quaternion);
+                }
+
+                if(grp.userData.isAudioReactive && audioValues && grp.userData.mainMaterial) {
+                    const bandIndex = Math.floor((i / objects3D.length) * audioValues.length);
+                    let intensity = (audioValues[bandIndex] + 100) / 100;
+                    intensity = Math.max(0, Math.min(1, intensity));
+
+                    const baseScale = 1.0;
+                    const bounce = intensity * 1.5;
+                    grp.scale.set(baseScale + bounce, baseScale + bounce, baseScale + bounce);
+                    
+                    if(grp.userData.mainMaterial.emissive) {
+                        const hue = (time * 0.5 + i * 0.1) % 1;
+                        grp.userData.mainMaterial.emissive.setHSL(hue, 1, intensity * 2);
+                        grp.userData.mainMaterial.emissiveIntensity = intensity * 3;
+                    }
+                } else if (grp.userData.isAudioReactive) {
+                     if(grp.userData.mainMaterial && grp.userData.mainMaterial.emissive) {
+                        const hue = (time * 0.2 + i * 0.1) % 1;
+                        grp.userData.mainMaterial.emissive.setHSL(hue, 1, 0.5);
+                     }
+                }
+            });
+
+            if(selectionBox && selectedObject) selectionBox.update();
+            updateDOMAnchors();
+            if(renderer && scene && camera) renderer.render(scene, camera);
+        }
+
+        function onWindowResize() {
+            if(!camera || !renderer) return;
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        function showToast(msg) {
+            const container = document.getElementById('toast-container');
+            if(!container) return;
+            const toast = document.createElement('div');
+            toast.className = 'glass-panel px-4 py-2 rounded-xl text-xs text-pink-300 font-mono shadow-lg border border-pink-500/40 animate-pulse';
+            toast.innerText = msg;
+            container.appendChild(toast);
+            setTimeout(() => toast.remove(), 3000);
+        }
+
+        document.body.addEventListener('click', async () => {
+            if(typeof Tone !== 'undefined' && Tone.context && Tone.context.state !== 'running') {
+                await Tone.start();
+            }
+        }, { once: true });
+    </script>
+</body>
+</html>
