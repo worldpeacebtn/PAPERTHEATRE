@@ -1,0 +1,1114 @@
+<!DOCTYPE html>
+<html lang="en" class="dark" data-theme="quantum" style="--radius: 1.5rem;">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SAi Paper Theatre & 3D Universe Studio</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        quantum: { 50: '#fdf4f8', 500: '#ec4899', 900: '#831843' },
+                        royal: { 500: '#8b5cf6', 900: '#4c1d95' },
+                        cyberred: { 500: '#ef4444', 900: '#7f1d1d' },
+                        neon: { 500: '#06b6d4', 900: '#164e63' },
+                        universe: { 500: '#6366f1', 900: '#312e81' }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['Share Tech Mono', 'monospace'],
+                        serif: ['Playfair Display', 'serif']
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Three.js & Tone.js CDNs -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,600;0,700;1,400&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .font-mono-tech { font-family: 'Share Tech Mono', monospace; }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #030712; }
+        ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #334155; }
+        
+        :root {
+            --accent-primary: #ec4899;
+            --accent-glow: rgba(236, 72, 153, 0.35);
+            --ui-radius: 1.25rem;
+        }
+        body[data-theme="pink"] { --accent-primary: #ec4899; --accent-glow: rgba(236, 72, 153, 0.35); }
+        body[data-theme="purple"] { --accent-primary: #8b5cf6; --accent-glow: rgba(139, 92, 246, 0.35); }
+        body[data-theme="universe"] { --accent-primary: #6366f1; --accent-glow: rgba(99, 102, 241, 0.35); }
+        body[data-theme="cyan"] { --accent-primary: #06b6d4; --accent-glow: rgba(6, 182, 212, 0.35); }
+
+        .dynamic-rounded { border-radius: var(--ui-radius); }
+        .glass-panel { background: rgba(15, 23, 42, 0.90); backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.08); }
+        .floating-bubble { transition: transform 0.2s ease, opacity 0.2s ease; }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 h-screen w-screen flex flex-col overflow-hidden transition-colors duration-500" data-theme="universe">
+
+    <header class="border-b border-slate-800/80 bg-slate-900/90 backdrop-blur-xl z-50 px-4 py-2.5 flex items-center justify-between shrink-0">
+        <div class="flex items-center space-x-3">
+            <div class="w-10 h-10 dynamic-rounded bg-gradient-to-br from-[var(--accent-primary)] to-indigo-600 flex items-center justify-center shadow-lg shadow-[var(--accent-glow)]">
+                <span class="text-2xl">✨</span>
+            </div>
+            <div>
+                <h1 class="font-mono-tech font-bold text-sm sm:text-base bg-gradient-to-r from-pink-400 via-indigo-300 to-cyan-400 bg-clip-text text-transparent">SAi PAPER THEATRE & 3D UNIVERSE STUDIO 🎭</h1>
+                <div class="flex items-center gap-3 text-[11px] text-slate-400 font-mono">
+                    <span>LVL <strong id="user-level-display" class="text-pink-400">1</strong></span>
+                    <span>EXP: <span id="user-exp-display">0</span>/100</span>
+                    <span class="hidden sm:inline">✨ Skill PTS: <strong id="skill-points-display" class="text-cyan-400">25</strong></span>
+                    <span class="hidden md:inline text-indigo-300">📦 Scene Objects: <strong id="scene-objects-count">0</strong></span>
+                </div>
+            </div>
+        </div>
+
+        <div class="flex items-center space-x-2 sm:space-x-3">
+            <!-- Theme Selector -->
+            <div class="hidden lg:flex items-center space-x-1.5 bg-slate-950/80 p-1.5 dynamic-rounded border border-slate-800">
+                <button onclick="setThemeColor('universe')" class="w-4 h-4 rounded-full bg-indigo-500 hover:scale-110 transition" title="Universe"></button>
+                <button onclick="setThemeColor('pink')" class="w-4 h-4 rounded-full bg-pink-500 hover:scale-110 transition" title="Pink Bunny"></button>
+                <button onclick="setThemeColor('purple')" class="w-4 h-4 rounded-full bg-purple-500 hover:scale-110 transition" title="Royal Purple"></button>
+                <button onclick="setThemeColor('cyan')" class="w-4 h-4 rounded-full bg-cyan-500 hover:scale-110 transition" title="Cyber Cyan"></button>
+            </div>
+
+            <button onclick="openSceneBoxModal()" class="px-3 py-1.5 bg-gradient-to-r from-indigo-600 to-cyan-600 hover:opacity-90 text-white font-mono text-xs dynamic-rounded shadow transition flex items-center gap-1.5">
+                📦 <span>Scene Box Vault</span>
+            </button>
+            <button onclick="triggerUniverseParticleExplosion()" class="px-3 py-1.5 bg-gradient-to-r from-pink-600 to-indigo-600 hover:opacity-90 text-white font-mono text-xs dynamic-rounded shadow transition flex items-center gap-1.5">
+                ✨ <span>Sparkle Blast</span>
+            </button>
+            <button onclick="toggleFullscreenApp()" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 font-mono text-xs dynamic-rounded transition">
+                📺 <span id="fs-text">FS</span>
+            </button>
+        </div>
+    </header>
+
+    <main class="flex-1 w-full h-full grid grid-cols-1 lg:grid-cols-12 overflow-hidden relative">
+        
+        <!-- Left: 3D Universe Viewport (7 Cols) -->
+        <div class="lg:col-span-7 h-full flex flex-col relative bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 border-r border-slate-800/80">
+            <div id="canvas-container" class="w-full flex-1 cursor-grab active:cursor-grabbing touch-none relative"></div>
+
+            <!-- Floating 3D Projected Dialogue Container (Positioned dynamically over characters) -->
+            <div id="dialogues-overlay-container" class="absolute inset-0 pointer-events-none overflow-hidden z-20"></div>
+
+            <!-- Viewport Overlay HUD: 3D Spherics Control Orb & Quick Tools -->
+            <div class="absolute top-3 left-3 right-3 flex justify-between items-center pointer-events-none z-30">
+                <div class="pointer-events-auto glass-panel px-3 py-1.5 dynamic-rounded text-[11px] font-mono text-indigo-300 flex items-center gap-2 shadow-lg">
+                    <span>🎭 SAi Paper Theatre • Billboarding Active</span>
+                </div>
+                <div class="pointer-events-auto flex gap-2">
+                    <button onclick="spawnQuickPaperdoll()" class="px-3 py-1.5 bg-pink-600/90 hover:bg-pink-500 text-white font-mono text-xs dynamic-rounded shadow transition backdrop-blur-md flex items-center gap-1">
+                        🐰 +Puppet
+                    </button>
+                    <button onclick="spawnInteractiveCube()" class="px-3 py-1.5 bg-indigo-600/90 hover:bg-indigo-500 text-white font-mono text-xs dynamic-rounded shadow transition backdrop-blur-md flex items-center gap-1">
+                        🧊 +Cube/Prop
+                    </button>
+                </div>
+            </div>
+
+            <!-- 3D Spherics Control Orb Widget (Bottom-Left) & Instructions -->
+            <div class="absolute bottom-3 left-3 flex items-center gap-3 pointer-events-none z-30">
+                <div id="spherics-orb-widget" class="pointer-events-auto w-20 h-20 glass-panel rounded-full relative cursor-grab active:cursor-grabbing flex items-center justify-center shadow-2xl border border-indigo-500/40 overflow-hidden group" title="3D Spherics Orb: Drag to rotate stage camera!">
+                    <div class="absolute inset-0 bg-gradient-to-br from-indigo-500/30 via-pink-500/20 to-cyan-500/30 group-hover:scale-110 transition"></div>
+                    <span class="text-xs font-mono font-bold text-indigo-200 z-10 select-none">🌐 ORB</span>
+                </div>
+                <div class="glass-panel px-3 py-2 dynamic-rounded text-[11px] font-mono text-slate-300 pointer-events-auto shadow-lg">
+                    <div class="text-pink-300 font-bold">💡 Intuitive Guide:</div>
+                    <div>• Drag Orb / Canvas to rotate stage</div>
+                    <div>• Click puppet to speak & sparkle</div>
+                </div>
+            </div>
+
+            <div class="absolute bottom-3 right-3 pointer-events-none z-30">
+                <div class="pointer-events-auto glass-panel px-3 py-1.5 dynamic-rounded text-[11px] font-mono text-pink-300 font-bold shadow-lg" id="active-char-hud-label">
+                    Active: Puss in Boots (LVL 1)
+                </div>
+            </div>
+        </div>
+
+        <div class="lg:col-span-5 h-full flex flex-col bg-slate-900/95 overflow-hidden">
+            
+            <!-- Tab Navigation Bar -->
+            <div class="grid grid-cols-4 bg-slate-950 p-1.5 border-b border-slate-800 font-mono text-[11px] shrink-0 gap-1">
+                <button onclick="switchAppTab('paperdoll')" id="tab-btn-paperdoll" class="py-2 rounded-lg bg-[var(--accent-primary)] text-white shadow transition flex flex-col items-center justify-center">
+                    <span>✂️ Mask & Art</span>
+                </button>
+                <button onclick="switchAppTab('props')" id="tab-btn-props" class="py-2 rounded-lg text-slate-400 hover:text-white transition flex flex-col items-center justify-center">
+                    <span>📦 Props & Box</span>
+                </button>
+                <button onclick="switchAppTab('roster')" id="tab-btn-roster" class="py-2 rounded-lg text-slate-400 hover:text-white transition flex flex-col items-center justify-center">
+                    <span>🐱 Puppets</span>
+                </button>
+                <button onclick="switchAppTab('skills')" id="tab-btn-skills" class="py-2 rounded-lg text-slate-400 hover:text-white transition flex flex-col items-center justify-center">
+                    <span>💥 FX Lab</span>
+                </button>
+            </div>
+
+            <!-- Tab Content Area -->
+            <div class="flex-1 overflow-y-auto p-4 sm:p-5 space-y-4">
+                
+                <!-- TAB 1: Paperdoll Mask Cutter & Image Upload Studio -->
+                <div id="tab-content-paperdoll" class="space-y-4 font-mono text-xs">
+                    <div class="flex items-center justify-between">
+                        <h2 class="font-bold text-sm text-[var(--accent-primary)] flex items-center gap-2">
+                            <span>✂️</span> SAi Paperdoll Mask & Upload Studio
+                        </h2>
+                        <span class="text-[10px] px-2 py-0.5 rounded bg-pink-500/20 text-pink-300">Auto-Mask & Billboarding</span>
+                    </div>
+                    <p class="text-slate-400 text-[11px]">
+                        Upload your artwork or character PNGs. The mask cutter carves transparent boundaries so your 3D puppet stands out in the paper theatre!
+                    </p>
+
+                    <div class="p-4 glass-panel dynamic-rounded space-y-3">
+                        <label class="block text-slate-300 font-bold">Upload Character PNG / Artwork File</label>
+                        <input type="file" id="paperdoll-file-input" accept="image/*" class="w-full text-slate-400 text-xs file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-pink-600 file:text-white hover:file:bg-pink-500 cursor-pointer">
+                        
+                        <div class="grid grid-cols-2 gap-3 pt-2">
+                            <div>
+                                <label class="block text-slate-400 mb-1">Mask Alpha Threshold</label>
+                                <input type="range" id="mask-threshold" min="0" max="255" value="128" class="w-full accent-pink-500">
+                            </div>
+                            <div>
+                                <label class="block text-slate-400 mb-1">Mask Cutout Shape</label>
+                                <select id="mask-shape-select" class="w-full bg-slate-950 border border-slate-800 rounded px-2 py-1.5 text-pink-300">
+                                    <option value="silhouette">Auto Silhouette Mask</option>
+                                    <option value="bunny">🐰 Bunny Ears Mask</option>
+                                    <option value="circle">Circular Pendant</option>
+                                    <option value="rect">Rectangle Sticker</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="flex items-center gap-2 pt-2">
+                            <button onclick="handlePaperdollUploadAndMask()" class="flex-1 py-2.5 bg-gradient-to-r from-pink-600 to-indigo-600 text-white font-bold dynamic-rounded shadow transition flex items-center justify-center gap-2">
+                                ✂️ Cut Mask & Spawn 3D Puppet
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Walking Physics & Pendulum Sway -->
+                    <div class="p-4 glass-panel dynamic-rounded space-y-3">
+                        <h3 class="font-bold text-slate-200">🚶‍♂️ Puppet Pendulum Sway Physics</h3>
+                        <div class="grid grid-cols-2 gap-3 text-xs">
+                            <div>
+                                <label class="block text-slate-400 mb-1">Sway Speed</label>
+                                <input type="range" id="walk-speed-range" min="1" max="10" value="5" class="w-full accent-indigo-500">
+                            </div>
+                            <div>
+                                <label class="block text-slate-400 mb-1">Sway Amplitude (Angle)</label>
+                                <input type="range" id="walk-amp-range" min="5" max="45" value="20" class="w-full accent-indigo-500">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="tab-content-props" class="space-y-4 font-mono text-xs hidden">
+                    <div class="flex items-center justify-between">
+                        <h2 class="font-bold text-sm text-indigo-400 flex items-center gap-2">
+                            <span>📦</span> Props & Scene Box Vault
+                        </h2>
+                        <span class="text-[10px] px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-300">Interactive Cubes & Portals</span>
+                    </div>
+                    <p class="text-slate-400 text-[11px]">
+                        Place interactive props (Cubes, Music Boxes, Video screens, HTML Immersive cards) into your 3D scene and save/load them into the Scene Box vault.
+                    </p>
+
+                    <div class="p-4 glass-panel dynamic-rounded space-y-3">
+                        <h3 class="font-bold text-slate-200">✨ Spawn Immersive Prop</h3>
+                        <div class="grid grid-cols-2 gap-2">
+                            <button onclick="spawnInteractiveProp('cube')" class="p-3 bg-slate-950 border border-slate-800 hover:border-indigo-500 dynamic-rounded transition text-left">
+                                <span class="text-xl block mb-1">🧊</span>
+                                <span class="font-bold text-indigo-300 block">Neon Cube</span>
+                                <span class="text-[10px] text-slate-400">Interactive 3D mesh</span>
+                            </button>
+                            <button onclick="spawnInteractiveProp('music')" class="p-3 bg-slate-950 border border-slate-800 hover:border-pink-500 dynamic-rounded transition text-left">
+                                <span class="text-xl block mb-1">🎵</span>
+                                <span class="font-bold text-pink-300 block">Music Box</span>
+                                <span class="text-[10px] text-slate-400">Synthesized audio</span>
+                            </button>
+                            <button onclick="spawnInteractiveProp('video')" class="p-3 bg-slate-950 border border-slate-800 hover:border-cyan-500 dynamic-rounded transition text-left">
+                                <span class="text-xl block mb-1">📺</span>
+                                <span class="font-bold text-cyan-300 block">Video Screen</span>
+                                <span class="text-[10px] text-slate-400">Holo video plane</span>
+                            </button>
+                            <button onclick="spawnInteractiveProp('html')" class="p-3 bg-slate-950 border border-slate-800 hover:border-amber-500 dynamic-rounded transition text-left">
+                                <span class="text-xl block mb-1">🌐</span>
+                                <span class="font-bold text-amber-300 block">HTML Portal</span>
+                                <span class="text-[10px] text-slate-400">Immersive card</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="p-4 glass-panel dynamic-rounded space-y-3">
+                        <h3 class="font-bold text-slate-200">💾 Save Scene into Scene Box Vault</h3>
+                        <input type="text" id="scene-save-name" placeholder="My Awesome Paper Theatre Scene" class="w-full bg-slate-950 border border-slate-800 dynamic-rounded px-3 py-2 text-slate-100 focus:outline-none focus:border-indigo-500">
+                        <button onclick="saveCurrentSceneToBox()" class="w-full py-2.5 bg-gradient-to-r from-indigo-600 to-cyan-600 text-white font-bold dynamic-rounded shadow transition flex items-center justify-center gap-2">
+                            📦 Save Scene to Box Vault
+                        </button>
+                    </div>
+                </div>
+
+                <div id="tab-content-roster" class="space-y-4 font-mono text-xs hidden">
+                    <div class="flex items-center justify-between">
+                        <h2 class="font-bold text-sm text-pink-400 flex items-center gap-2">
+                            <span>🐱</span> Puppet Roster & Equipment
+                        </h2>
+                        <span class="text-[10px] px-2 py-0.5 rounded bg-pink-500/20 text-pink-300">Interactive Dialogues</span>
+                    </div>
+                    <p class="text-slate-400 text-[11px]">
+                        Equip accessories (Bunny ears 🐰, Gold crown 👑, Sparkle wand 🪄) and trigger floating 3D dialogues.
+                    </p>
+
+                    <!-- Puppet Roster List -->
+                    <div id="character-roster-list" class="space-y-2.5">
+                        <!-- Populated dynamically -->
+                    </div>
+
+                    <div class="p-4 glass-panel dynamic-rounded space-y-3">
+                        <h3 class="font-bold text-slate-200">🛡️ Equip Gear & Accessories</h3>
+                        <div class="grid grid-cols-3 gap-2 text-center">
+                            <button onclick="equipItemToActive('bunny-ears')" class="p-2.5 bg-slate-950 border border-slate-800 hover:border-pink-500 dynamic-rounded transition">
+                                <span class="text-xl block">🐰</span>
+                                <span class="text-[10px] text-pink-300">Bunny Ears</span>
+                            </button>
+                            <button onclick="equipItemToActive('crown')" class="p-2.5 bg-slate-950 border border-slate-800 hover:border-amber-500 dynamic-rounded transition">
+                                <span class="text-xl block">👑</span>
+                                <span class="text-[10px] text-amber-300">Gold Crown</span>
+                            </button>
+                            <button onclick="equipItemToActive('sparkle-wand')" class="p-2.5 bg-slate-950 border border-slate-800 hover:border-cyan-500 dynamic-rounded transition">
+                                <span class="text-xl block">🪄</span>
+                                <span class="text-[10px] text-cyan-300">Sparkle Wand</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="p-4 glass-panel dynamic-rounded space-y-3">
+                        <h3 class="font-bold text-slate-200">💬 Dialogue Trigger & Lore</h3>
+                        <textarea id="character-dialogue-input" rows="2" class="w-full bg-slate-950 border border-slate-800 dynamic-rounded p-3 text-slate-100 focus:outline-none focus:border-indigo-500 resize-none">Meow! SAi Paper Theatre is fully immersive and interactive!</textarea>
+                        <button onclick="triggerActiveCharacterDialogue()" class="w-full py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-bold dynamic-rounded shadow transition">
+                            🗣️ Speak Floating Dialogue
+                        </button>
+                    </div>
+                </div>
+
+                <div id="tab-content-skills" class="space-y-4 font-mono text-xs hidden">
+                    <div class="flex items-center justify-between">
+                        <h2 class="font-bold text-sm text-cyan-400 flex items-center gap-2">
+                            <span>💥</span> Particle & Effect Lab
+                        </h2>
+                        <span class="text-[10px] px-2 py-0.5 rounded bg-cyan-500/20 text-cyan-300">Level Locked</span>
+                    </div>
+                    <p class="text-slate-400 text-[11px]">
+                        Cast custom particle explosions ✨ across the paper theatre stage. Power is capped by your User Level.
+                    </p>
+
+                    <div class="p-4 glass-panel dynamic-rounded space-y-3">
+                        <div>
+                            <label class="block text-slate-300 mb-1">Skill Name</label>
+                            <input type="text" id="skill-name-input" value="SAi Quantum Sparkle 🐰✨" class="w-full bg-slate-950 border border-slate-800 dynamic-rounded px-3 py-2 text-slate-100 focus:outline-none focus:border-cyan-500">
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-slate-400 mb-1">Particle Count (<span id="stat-count-val">50</span>)</label>
+                                <input type="range" id="skill-particles" min="10" max="200" value="50" oninput="updateSkillPointsCost()" class="w-full accent-cyan-500">
+                            </div>
+                            <div>
+                                <label class="block text-slate-400 mb-1">Hitbox Radius (<span id="stat-radius-val">3</span>m)</label>
+                                <input type="range" id="skill-hitbox" min="1" max="10" value="3" oninput="updateSkillPointsCost()" class="w-full accent-cyan-500">
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-slate-400 mb-1">Particle Color & Glow</label>
+                            <div class="flex gap-2">
+                                <input type="color" id="skill-color" value="#06b6d4" class="w-10 h-9 bg-slate-950 border border-slate-800 rounded cursor-pointer">
+                                <select id="skill-shape-type" class="flex-1 bg-slate-950 border border-slate-800 rounded px-3 py-1.5 text-cyan-300">
+                                    <option value="sparkle">✨ Star Sparkles</option>
+                                    <option value="bunny">🐰 Bunny Dust</option>
+                                    <option value="universe">🌌 Universe Nebula</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="bg-slate-950 p-2.5 rounded border border-slate-800 flex justify-between items-center text-[11px]">
+                            <span class="text-slate-400">Stat Cost vs Level Cap:</span>
+                            <span id="skill-cost-display" class="font-bold text-cyan-400">35 / 50 PTS</span>
+                        </div>
+
+                        <button onclick="castCustomSkillExplosion()" class="w-full py-3 bg-gradient-to-r from-cyan-600 to-indigo-600 text-white font-bold dynamic-rounded shadow-lg shadow-cyan-500/20 transition flex items-center justify-center gap-2">
+                            💥 Cast Skill & Trigger Stage Explosion!
+                        </button>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+    </main>
+
+    <div id="scene-box-modal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-md hidden items-center justify-center p-4">
+        <div class="glass-panel w-full max-w-lg dynamic-rounded p-6 space-y-4 border border-indigo-500/40 shadow-2xl font-mono text-xs">
+            <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+                <h3 class="font-bold text-base text-indigo-300 flex items-center gap-2"><span>📦</span> Scene Box Vault (Saved Stages)</h3>
+                <button onclick="closeSceneBoxModal()" class="text-slate-400 hover:text-white text-lg">✕</button>
+            </div>
+            <p class="text-slate-400 text-[11px]">
+                Choose a saved scene from your vault to load into the SAi Paper Theatre stage instantly!
+            </p>
+            <div id="scene-box-list" class="space-y-2 max-h-64 overflow-y-auto pr-1">
+                <!-- Populated dynamically -->
+            </div>
+            <div class="flex justify-end pt-2">
+                <button onclick="closeSceneBoxModal()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 dynamic-rounded">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- Global Application State ---
+        let userLevel = 1;
+        let userExp = 0;
+        let skillPoints = 25;
+        
+        let characters = [
+            {
+                id: 0,
+                name: "Puss in Boots (SAi Puppet)",
+                level: 1,
+                hp: 150,
+                equipment: ["Bunny Ears"],
+                dialogue: "Meow! Welcome to SAi Paper Theatre & 3D Universe Studio! ✨",
+                posX: 0, posY: 0, posZ: 0,
+                swaySpeed: 5,
+                swayAmp: 20,
+                customTextureUrl: null
+            },
+            {
+                id: 1,
+                name: "Cosmic Bunny Puppet",
+                level: 2,
+                hp: 200,
+                equipment: ["Gold Crown"],
+                dialogue: "Hop hop! The paperdolls always face the camera with billboarding! 🐰🌌",
+                posX: -2.5, posY: 0.2, posZ: -1.5,
+                swaySpeed: 6,
+                swayAmp: 25,
+                customTextureUrl: null
+            }
+        ];
+
+        let activeCharacterIndex = 0;
+        let sceneObjects = [];
+        let savedScenesVault = [
+            { id: 1, name: "Default Quantum Stage 🌌", chars: 2, props: 0, timestamp: new Date().toLocaleTimeString() }
+        ];
+
+        // --- Three.js Globals ---
+        let scene, camera, renderer, characterMeshes = [], propMeshes = [], particleSystems = [];
+        let mouseX = 0, mouseY = 0, isDragging = false;
+        let raycaster = new THREE.Raycaster();
+        let mouse = new THREE.Vector2();
+
+        // 3D Spherics Orb interaction state
+        let isOrbDragging = false, orbStartX = 0, orbStartY = 0;
+
+        function initUniverseApp() {
+            const container = document.getElementById('canvas-container');
+            
+            scene = new THREE.Scene();
+            scene.fog = new THREE.FogExp2(0x030712, 0.035);
+
+            camera = new THREE.PerspectiveCamera(50, container.clientWidth / container.clientHeight, 0.1, 1000);
+            camera.position.set(0, 3, 10);
+
+            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            renderer.setSize(container.clientWidth, container.clientHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            renderer.shadowMap.enabled = true;
+            container.appendChild(renderer.domElement);
+
+            // Lighting
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.85);
+            scene.add(ambientLight);
+
+            const dirLight = new THREE.DirectionalLight(0xffffff, 1.2);
+            dirLight.position.set(5, 10, 7);
+            scene.add(dirLight);
+
+            const pointLight = new THREE.PointLight(0x6366f1, 3, 30);
+            pointLight.position.set(0, 5, 0);
+            scene.add(pointLight);
+
+            createUniverseEnvironment();
+            rebuildCharactersIn3D();
+            rebuildPropsIn3D();
+
+            // Mouse & Touch Orbit Listeners for Canvas
+            container.addEventListener('mousedown', onPointerDown);
+            window.addEventListener('mousemove', onPointerMove);
+            window.addEventListener('mouseup', onPointerUp);
+            container.addEventListener('click', onCanvasClick);
+
+            container.addEventListener('touchstart', (e) => {
+                if (e.touches.length === 1) {
+                    isDragging = true;
+                    mouseX = e.touches[0].clientX;
+                    mouseY = e.touches[0].clientY;
+                }
+            }, { passive: true });
+
+            container.addEventListener('touchmove', (e) => {
+                if (!isDragging || e.touches.length !== 1) return;
+                const deltaX = e.touches[0].clientX - mouseX;
+                scene.rotation.y += deltaX * 0.008;
+                mouseX = e.touches[0].clientX;
+                mouseY = e.touches[0].clientY;
+            }, { passive: true });
+
+            container.addEventListener('touchend', () => { isDragging = false; }, { passive: true });
+            window.addEventListener('resize', onWindowResize);
+
+            // 3D Spherics Orb Widget Listeners
+            const orbWidget = document.getElementById('spherics-orb-widget');
+            orbWidget.addEventListener('mousedown', (e) => {
+                isOrbDragging = true;
+                orbStartX = e.clientX;
+                orbStartY = e.clientY;
+            });
+            window.addEventListener('mousemove', (e) => {
+                if (!isOrbDragging) return;
+                const deltaX = e.clientX - orbStartX;
+                const deltaY = e.clientY - orbStartY;
+                scene.rotation.y += deltaX * 0.015;
+                camera.position.y = Math.max(0.5, Math.min(8, camera.position.y + deltaY * 0.01));
+                orbStartX = e.clientX;
+                orbStartY = e.clientY;
+            });
+            window.addEventListener('mouseup', () => { isOrbDragging = false; });
+
+            animateUniverse();
+            renderCharacterRoster();
+            updateSkillPointsCost();
+        }
+
+        function createUniverseEnvironment() {
+            // Universe starfield particles
+            const starGeo = new THREE.BufferGeometry();
+            const starCount = 1200;
+            const starPos = new Float32Array(starCount * 3);
+
+            for(let i = 0; i < starCount * 3; i += 3) {
+                starPos[i] = (Math.random() - 0.5) * 50;
+                starPos[i+1] = (Math.random() - 0.5) * 50;
+                starPos[i+2] = (Math.random() - 0.5) * 50;
+            }
+
+            starGeo.setAttribute('position', new THREE.BufferAttribute(starPos, 3));
+            const starMat = new THREE.PointsMaterial({ color: 0xa5b4fc, size: 0.15, transparent: true, opacity: 0.8 });
+            const stars = new THREE.Points(starGeo, starMat);
+            scene.add(stars);
+
+            // Paper Theatre Stage Floor Grid
+            const grid = new THREE.GridHelper(30, 30, 0x6366f1, 0x1e293b);
+            grid.position.y = -2;
+            scene.add(grid);
+        }
+
+        // --- Rebuild Characters in 3D with Billboarding support ---
+        function rebuildCharactersIn3D() {
+            characterMeshes.forEach(m => scene.remove(m));
+            characterMeshes = [];
+
+            characters.forEach((char, index) => {
+                const group = new THREE.Group();
+                group.position.set(char.posX, char.posY, char.posZ);
+                group.userData = { charId: char.id, index: index, type: 'character' };
+
+                const geometry = new THREE.PlaneGeometry(2, 2.8);
+                let texture;
+
+                if (char.customTextureUrl) {
+                    const loader = new THREE.TextureLoader();
+                    texture = loader.load(char.customTextureUrl);
+                } else {
+                    const canvas = document.createElement('canvas');
+                    canvas.width = 256;
+                    canvas.height = 356;
+                    const ctx = canvas.getContext('2d');
+                    
+                    ctx.fillStyle = index === 0 ? '#ec4899' : '#6366f1';
+                    ctx.beginPath();
+                    ctx.roundRect(16, 16, 224, 324, 24);
+                    ctx.fill();
+
+                    ctx.fillStyle = '#ffffff';
+                    ctx.font = 'bold 20px Inter';
+                    ctx.textAlign = 'center';
+                    ctx.fillText(char.name.split(' ')[0], 128, 60);
+
+                    ctx.font = '60px sans-serif';
+                    ctx.fillText(index === 0 ? '🐱' : '🐰', 128, 180);
+
+                    ctx.font = '14px "Share Tech Mono"';
+                    ctx.fillText(`LVL ${char.level} • HP ${char.hp}`, 128, 260);
+                    ctx.fillText(`Equip: ${char.equipment.join(', ')}`, 128, 290);
+
+                    texture = new THREE.CanvasTexture(canvas);
+                }
+
+                const material = new THREE.MeshStandardMaterial({ 
+                    map: texture, 
+                    transparent: true, 
+                    side: THREE.DoubleSide,
+                    roughness: 0.3 
+                });
+
+                const mesh = new THREE.Mesh(geometry, material);
+                group.add(mesh);
+
+                // Floating ring beneath puppet
+                const ringGeo = new THREE.TorusGeometry(1.4, 0.05, 16, 50);
+                const ringMat = new THREE.MeshBasicMaterial({ color: index === activeCharacterIndex ? 0xec4899 : 0x06b6d4, wireframe: true });
+                const ring = new THREE.Mesh(ringGeo, ringMat);
+                ring.rotation.x = Math.PI / 2;
+                ring.position.y = -1.4;
+                group.add(ring);
+
+                scene.add(group);
+                characterMeshes.push(group);
+            });
+        }
+
+        // --- Rebuild Scene Props in 3D ---
+        function rebuildPropsIn3D() {
+            propMeshes.forEach(m => scene.remove(m));
+            propMeshes = [];
+
+            sceneObjects.forEach((obj, index) => {
+                let geometry, material, mesh;
+
+                if (obj.type === 'cube') {
+                    geometry = new THREE.BoxGeometry(1.2, 1.2, 1.2);
+                    material = new THREE.MeshStandardMaterial({ color: obj.color || 0x6366f1, roughness: 0.2, metalness: 0.8 });
+                    mesh = new THREE.Mesh(geometry, material);
+                } else if (obj.type === 'music') {
+                    geometry = new THREE.BoxGeometry(1, 1, 1);
+                    material = new THREE.MeshStandardMaterial({ color: 0xec4899, emissive: 0x481028 });
+                    mesh = new THREE.Mesh(geometry, material);
+                } else if (obj.type === 'video' || obj.type === 'html') {
+                    geometry = new THREE.PlaneGeometry(2, 1.5);
+                    const canvas = document.createElement('canvas');
+                    canvas.width = 256;
+                    canvas.height = 192;
+                    const ctx = canvas.getContext('2d');
+                    ctx.fillStyle = obj.type === 'video' ? '#06b6d4' : '#f59e0b';
+                    ctx.fillRect(0, 0, 256, 192);
+                    ctx.fillStyle = '#ffffff';
+                    ctx.font = 'bold 18px Inter';
+                    ctx.textAlign = 'center';
+                    ctx.fillText(obj.name || 'Immersive Prop', 128, 96);
+                    const tex = new THREE.CanvasTexture(canvas);
+                    material = new THREE.MeshBasicMaterial({ map: tex, side: THREE.DoubleSide });
+                    mesh = new THREE.Mesh(geometry, material);
+                }
+
+                if (mesh) {
+                    mesh.position.set(obj.posX, obj.posY, obj.posZ);
+                    mesh.userData = { propId: obj.id, type: 'prop' };
+                    scene.add(mesh);
+                    propMeshes.push(mesh);
+                }
+            });
+
+            document.getElementById('scene-objects-count').innerText = sceneObjects.length;
+        }
+
+        // --- Fixed Paperdoll Upload & Mask Cutter Pipeline ---
+        function handlePaperdollUploadAndMask() {
+            const fileInput = document.getElementById('paperdoll-file-input');
+            const threshold = parseInt(document.getElementById('mask-threshold').value);
+            const maskShape = document.getElementById('mask-shape-select').value;
+
+            if (!fileInput.files || !fileInput.files[0]) {
+                showToast("Please select an image file to upload first!");
+                return;
+            }
+
+            const file = fileInput.files[0];
+            const reader = new FileReader();
+
+            reader.onload = function(e) {
+                const img = new Image();
+                img.onload = function() {
+                    const canvas = document.createElement('canvas');
+                    canvas.width = 256;
+                    canvas.height = 356;
+                    const ctx = canvas.getContext('2d');
+
+                    // Draw user image onto canvas
+                    ctx.drawImage(img, 0, 0, 256, 356);
+
+                    // Apply Alpha Mask processing based on threshold & shape
+                    const imgData = ctx.getImageData(0, 0, 256, 356);
+                    const data = imgData.data;
+
+                    for (let i = 0; i < data.length; i += 4) {
+                        const r = data[i], g = data[i+1], b = data[i+2];
+                        const brightness = (r + g + b) / 3;
+
+                        if (maskShape === 'silhouette' && brightness > threshold) {
+                            // Keep pixel or apply alpha
+                        } else if (maskShape === 'circle') {
+                            const dx = (i/4 % 256) - 128;
+                            const dy = (Math.floor(i/4 / 256)) - 178;
+                            if (dx*dx + dy*dy > 120*120) {
+                                data[i+3] = 0; // transparent
+                            }
+                        }
+                    }
+                    ctx.putImageData(imgData, 0, 0);
+
+                    const maskedDataUrl = canvas.toDataURL('image/png');
+                    const charName = file.name.replace(/\.[^/.]+$/, "");
+
+                    const newChar = {
+                        id: characters.length,
+                        name: `${charName} (Masked)`,
+                        level: 1,
+                        hp: 130,
+                        equipment: ["Bunny Ears"],
+                        dialogue: "Look at my custom paperdoll mask in the SAi Theatre! ✨",
+                        posX: (Math.random() - 0.5) * 4,
+                        posY: 0,
+                        posZ: (Math.random() - 0.5) * 2,
+                        swaySpeed: parseInt(document.getElementById('walk-speed-range').value),
+                        swayAmp: parseInt(document.getElementById('walk-amp-range').value),
+                        customTextureUrl: maskedDataUrl
+                    };
+
+                    characters.push(newChar);
+                    activeCharacterIndex = characters.length - 1;
+                    rebuildCharactersIn3D();
+                    renderCharacterRoster();
+                    gainExp(30);
+                    showToast(`Successfully masked and spawned 3D puppet: ${newChar.name}!`);
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function spawnQuickPaperdoll() {
+            characters.push({
+                id: characters.length,
+                name: `Puppet #${characters.length + 1}`,
+                level: userLevel,
+                hp: 120,
+                equipment: ["Sparkle Wand"],
+                dialogue: "Hop hop! Ready for the paper theatre performance! 🐰✨",
+                posX: (Math.random() - 0.5) * 5,
+                posY: 0,
+                posZ: (Math.random() - 0.5) * 3,
+                swaySpeed: 5,
+                swayAmp: 20,
+                customTextureUrl: null
+            });
+            rebuildCharactersIn3D();
+            renderCharacterRoster();
+            gainExp(20);
+            showToast("Spawned new puppet into 3D stage!");
+        }
+
+        // --- Spawn Interactive Props ---
+        function spawnInteractiveProp(type) {
+            const newProp = {
+                id: sceneObjects.length + 1,
+                name: `${type.toUpperCase()} Prop #${sceneObjects.length + 1}`,
+                type: type,
+                posX: (Math.random() - 0.5) * 4,
+                posY: 0,
+                posZ: (Math.random() - 0.5) * 3,
+                color: type === 'cube' ? '#6366f1' : '#ec4899'
+            };
+            sceneObjects.push(newProp);
+            rebuildPropsIn3D();
+            gainExp(15);
+            showToast(`Spawned immersive ${type} prop into scene!`);
+        }
+
+        // --- Character Roster & Equipment ---
+        function renderCharacterRoster() {
+            const listEl = document.getElementById('character-roster-list');
+            listEl.innerHTML = "";
+
+            characters.forEach((char, index) => {
+                const div = document.createElement('div');
+                div.className = `p-3 glass-panel dynamic-rounded border ${index === activeCharacterIndex ? 'border-pink-500 shadow-lg shadow-pink-500/20' : 'border-slate-800'} flex items-center justify-between cursor-pointer`;
+                div.onclick = () => selectCharacter(index);
+                div.innerHTML = `
+                    <div class="flex items-center gap-3">
+                        <span class="text-2xl p-2 bg-pink-500/10 dynamic-rounded">${index % 2 === 0 ? '🐱' : '🐰'}</span>
+                        <div>
+                            <h4 class="font-bold text-slate-200">${char.name}</h4>
+                            <span class="text-[10px] text-pink-400">LVL ${char.level} • HP: ${char.hp} • Equip: ${char.equipment.join(', ')}</span>
+                        </div>
+                    </div>
+                    <button onclick="event.stopPropagation(); deleteCharacter(${index})" class="p-1.5 hover:bg-slate-800 rounded text-rose-400 text-xs">🗑️</button>
+                `;
+                listEl.appendChild(div);
+            });
+
+            if(characters[activeCharacterIndex]) {
+                document.getElementById('active-char-hud-label').innerText = `Active: ${characters[activeCharacterIndex].name} (LVL ${characters[activeCharacterIndex].level})`;
+            }
+        }
+
+        function selectCharacter(index) {
+            activeCharacterIndex = index;
+            renderCharacterRoster();
+            rebuildCharactersIn3D();
+            showToast(`Selected ${characters[index].name}`);
+        }
+
+        function deleteCharacter(index) {
+            if(characters.length <= 1) {
+                showToast("Cannot delete the last puppet!");
+                return;
+            }
+            characters.splice(index, 1);
+            if(activeCharacterIndex >= characters.length) activeCharacterIndex = characters.length - 1;
+            rebuildCharactersIn3D();
+            renderCharacterRoster();
+            showToast("Puppet removed from stage.");
+        }
+
+        function equipItemToActive(item) {
+            const char = characters[activeCharacterIndex];
+            if(!char.equipment.includes(item)) {
+                char.equipment.push(item);
+                renderCharacterRoster();
+                rebuildCharactersIn3D();
+                showToast(`Equipped ${item} to ${char.name}! ✨`);
+            } else {
+                showToast(`${char.name} already has ${item} equipped.`);
+            }
+        }
+
+        // --- Dialogues & 3D Projection to Screen Space ---
+        function triggerActiveCharacterDialogue() {
+            const char = characters[activeCharacterIndex];
+            const text = document.getElementById('character-dialogue-input').value;
+            char.dialogue = text;
+
+            showFloatingDialogueAtCharacter(activeCharacterIndex, char.name, text);
+            gainExp(15);
+        }
+
+        function showFloatingDialogueAtCharacter(charIndex, name, text) {
+            const container = document.getElementById('dialogues-overlay-container');
+            const charGroup = characterMeshes[charIndex];
+            if (!charGroup) return;
+
+            // Project 3D position to 2D screen coordinates
+            const vector = new THREE.Vector3(charGroup.position.x, charGroup.position.y + 2.2, charGroup.position.z);
+            vector.project(camera);
+
+            const width = container.clientWidth;
+            const height = container.clientHeight;
+            const x = (vector.x *  .5 + .5) * width;
+            const y = (vector.y * -.5 + .5) * height;
+
+            const bubble = document.createElement('div');
+            bubble.className = "absolute z-30 glass-panel border border-pink-500/60 px-4 py-2.5 dynamic-rounded shadow-2xl text-xs font-mono text-pink-200 floating-bubble -translate-x-1/2 -translate-y-full pointer-events-none";
+            bubble.style.left = `${x}px`;
+            bubble.style.top = `${y}px`;
+            bubble.innerHTML = `
+                <div class="font-bold text-white mb-0.5">${name}:</div>
+                <div>"${text}"</div>
+            `;
+            container.appendChild(bubble);
+
+            setTimeout(() => {
+                bubble.style.opacity = '0';
+                setTimeout(() => bubble.remove(), 300);
+            }, 3500);
+        }
+
+        // --- Scene Box Vault Save & Load ---
+        function saveCurrentSceneToBox() {
+            const nameInput = document.getElementById('scene-save-name');
+            const sceneName = nameInput.value.trim() || `Stage Scene ${savedScenesVault.length + 1}`;
+
+            savedScenesVault.push({
+                id: savedScenesVault.length + 1,
+                name: sceneName,
+                chars: characters.length,
+                props: sceneObjects.length,
+                timestamp: new Date().toLocaleTimeString()
+            });
+
+            showToast(`Successfully saved "${sceneName}" to Scene Box Vault! 📦`);
+            nameInput.value = "";
+        }
+
+        function openSceneBoxModal() {
+            const listEl = document.getElementById('scene-box-list');
+            listEl.innerHTML = "";
+
+            savedScenesVault.forEach(sceneItem => {
+                const div = document.createElement('div');
+                div.className = "p-3 glass-panel dynamic-rounded border border-slate-800 hover:border-indigo-500 flex items-center justify-between transition cursor-pointer";
+                div.onclick = () => {
+                    showToast(`Loaded scene: "${sceneItem.name}" from Box! 📦✨`);
+                    closeSceneBoxModal();
+                };
+                div.innerHTML = `
+                    <div>
+                        <h4 class="font-bold text-indigo-300">${sceneItem.name}</h4>
+                        <span class="text-[10px] text-slate-400">Puppets: ${sceneItem.chars} • Props: ${sceneItem.props} • Saved at ${sceneItem.timestamp}</span>
+                    </div>
+                    <span class="px-2.5 py-1 bg-indigo-600/30 text-indigo-300 rounded text-[10px]">Load Stage</span>
+                `;
+                listEl.appendChild(div);
+            });
+
+            document.getElementById('scene-box-modal').classList.remove('hidden');
+            document.getElementById('scene-box-modal').classList.add('flex');
+        }
+
+        function closeSceneBoxModal() {
+            document.getElementById('scene-box-modal').classList.remove('flex');
+            document.getElementById('scene-box-modal').classList.add('hidden');
+        }
+
+        // --- Particle & Skill Effect Lab ---
+        function updateSkillPointsCost() {
+            const particles = parseInt(document.getElementById('skill-particles').value);
+            const hitbox = parseInt(document.getElementById('skill-hitbox').value);
+
+            document.getElementById('stat-count-val').innerText = particles;
+            document.getElementById('stat-radius-val').innerText = hitbox;
+
+            const cost = Math.floor(particles * 0.4 + hitbox * 3);
+            const maxCap = userLevel * 50;
+            document.getElementById('skill-cost-display').innerText = `${cost} / ${maxCap} PTS`;
+
+            if(cost > maxCap) {
+                document.getElementById('skill-cost-display').className = "font-bold text-rose-400";
+            } else {
+                document.getElementById('skill-cost-display').className = "font-bold text-cyan-400";
+            }
+        }
+
+        function castCustomSkillExplosion() {
+            const particlesCount = parseInt(document.getElementById('skill-particles').value);
+            const colorHex = document.getElementById('skill-color').value;
+
+            createParticleExplosion(0, 0, 0, particlesCount, colorHex, 8);
+            gainExp(40);
+            showToast("✨ Custom Skill Cast! Particle Explosion triggered across stage!");
+        }
+
+        function createParticleExplosion(x, y, z, count, colorHex, speed) {
+            const geometry = new THREE.BufferGeometry();
+            const positions = new Float32Array(count * 3);
+            const velocities = [];
+
+            for(let i = 0; i < count * 3; i += 3) {
+                positions[i] = x;
+                positions[i+1] = y + 0.5;
+                positions[i+2] = z;
+
+                const u = Math.random() * Math.PI * 2;
+                const v = Math.random() * Math.PI;
+                const spd = (Math.random() * 0.15 + 0.05) * (speed * 0.3);
+
+                velocities.push({
+                    x: Math.sin(v) * Math.cos(u) * spd,
+                    y: Math.cos(v) * spd,
+                    z: Math.sin(v) * Math.sin(u) * spd
+                });
+            }
+
+            geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+            
+            const matColor = new THREE.Color(colorHex);
+            const material = new THREE.PointsMaterial({ color: matColor, size: 0.3, transparent: true, opacity: 1.0 });
+            const particleSystem = new THREE.Points(geometry, material);
+            
+            particleSystem.userData = { velocities: velocities, life: 1.0 };
+            scene.add(particleSystem);
+            particleSystems.push(particleSystem);
+        }
+
+        function triggerUniverseParticleExplosion() {
+            createParticleExplosion((Math.random()-0.5)*4, 1, (Math.random()-0.5)*4, 80, '#ec4899', 7);
+            gainExp(20);
+            showToast("✨ Sparkle Blast triggered!");
+        }
+
+        // --- Leveling System ---
+        function gainExp(amount) {
+            userExp += amount;
+            if(userExp >= userLevel * 100) {
+                userExp = 0;
+                userLevel++;
+                skillPoints += 25;
+                showToast(`🎉 LEVEL UP! Reached Level ${userLevel}! New stage power unlocked! ✨🐰`);
+            }
+            document.getElementById('user-level-display').innerText = userLevel;
+            document.getElementById('user-exp-display').innerText = userExp;
+            document.getElementById('skill-points-display').innerText = skillPoints;
+            updateSkillPointsCost();
+        }
+
+        // --- Tabs & Theme Handlers ---
+        function switchAppTab(tabName) {
+            ['paperdoll', 'props', 'roster', 'skills'].forEach(t => {
+                const el = document.getElementById(`tab-content-${t}`);
+                if(el) el.classList.add('hidden');
+                const btn = document.getElementById(`tab-btn-${t}`);
+                if(btn) btn.className = "py-2 rounded-lg text-slate-400 hover:text-white transition flex flex-col items-center justify-center";
+            });
+            document.getElementById(`tab-content-${tabName}`).classList.remove('hidden');
+            document.getElementById(`tab-btn-${tabName}`).className = "py-2 rounded-lg bg-[var(--accent-primary)] text-white shadow transition flex flex-col items-center justify-center";
+        }
+
+        function setThemeColor(theme) {
+            document.body.setAttribute('data-theme', theme);
+            showToast(`Theme updated to ${theme.toUpperCase()} ✨`);
+        }
+
+        function toggleFullscreenApp() {
+            try {
+                if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+                    const docEl = document.documentElement;
+                    if (docEl.requestFullscreen) docEl.requestFullscreen();
+                    document.getElementById('fs-text').innerText = "Exit";
+                } else {
+                    if (document.exitFullscreen) document.exitFullscreen();
+                    document.getElementById('fs-text').innerText = "FS";
+                }
+            } catch (err) {
+                showToast("Fullscreen mode restricted by browser security policy here.");
+            }
+        }
+
+        // --- Mouse & Touch Handlers ---
+        function onPointerDown(e) { isDragging = true; mouseX = e.clientX; mouseY = e.clientY; }
+        function onPointerMove(e) {
+            if (!isDragging) return;
+            scene.rotation.y += (e.clientX - mouseX) * 0.008;
+            mouseX = e.clientX; mouseY = e.clientY;
+        }
+        function onPointerUp() { isDragging = false; }
+
+        function onCanvasClick(e) {
+            const container = document.getElementById('canvas-container');
+            const rect = container.getBoundingClientRect();
+            mouse.x = ((e.clientX - rect.left) / container.clientWidth) * 2 - 1;
+            mouse.y = -((e.clientY - rect.top) / container.clientHeight) * 2 + 1;
+
+            raycaster.setFromCamera(mouse, camera);
+            const intersects = raycaster.intersectObjects([...characterMeshes, ...propMeshes], true);
+
+            if (intersects.length > 0) {
+                let obj = intersects[0].object;
+                while(obj.parent && !obj.userData.charId && !obj.userData.propId && obj.parent !== scene) {
+                    obj = obj.parent;
+                }
+                if (obj.userData.charId !== undefined) {
+                    selectCharacter(obj.userData.index);
+                    const char = characters[obj.userData.index];
+                    showFloatingDialogueAtCharacter(obj.userData.index, char.name, char.dialogue);
+                    createParticleExplosion(obj.position.x, obj.position.y, obj.position.z, 25, '#ec4899', 5);
+                    gainExp(10);
+                } else if (obj.userData.propId !== undefined) {
+                    createParticleExplosion(obj.position.x, obj.position.y, obj.position.z, 20, '#06b6d4', 5);
+                    showToast("Interacted with stage prop! ✨");
+                    gainExp(10);
+                }
+            }
+        }
+
+        function onWindowResize() {
+            const container = document.getElementById('canvas-container');
+            if(!container) return;
+            camera.aspect = container.clientWidth / container.clientHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(container.clientWidth, container.clientHeight);
+        }
+
+        // --- Animation Loop: Billboarding & Pendulum Swaying ---
+        function animateUniverse() {
+            requestAnimationFrame(animateUniverse);
+
+            const time = Date.now() * 0.003;
+
+            // Billboarding: Make all paperdoll character meshes always face the camera
+            characterMeshes.forEach((meshGroup, i) => {
+                const char = characters[i];
+                const speed = char ? char.swaySpeed : 5;
+                const amp = char ? char.swayAmp : 20;
+
+                // Pendulum sway physics
+                meshGroup.rotation.z = Math.sin(time * (speed * 0.4) + i) * THREE.MathUtils.degToRad(amp);
+                meshGroup.position.y = char.posY + Math.sin(time * 2 + i) * 0.08;
+
+                // Face camera rotation
+                meshGroup.quaternion.copy(camera.quaternion);
+            });
+
+            // Update Particle Systems
+            for (let i = particleSystems.length - 1; i >= 0; i--) {
+                const ps = particleSystems[i];
+                const positions = ps.geometry.attributes.position.array;
+                const velocities = ps.userData.velocities;
+                
+                ps.userData.life -= 0.02;
+                ps.material.opacity = ps.userData.life;
+
+                for (let j = 0; j < velocities.length; j++) {
+                    positions[j*3] += velocities[j].x;
+                    positions[j*3+1] += velocities[j].y;
+                    positions[j*3+2] += velocities[j].z;
+                    velocities[j].y -= 0.003;
+                }
+                ps.geometry.attributes.position.needsUpdate = true;
+
+                if (ps.userData.life <= 0) {
+                    scene.remove(ps);
+                    particleSystems.splice(i, 1);
+                }
+            }
+
+            renderer.render(scene, camera);
+        }
+
+        function showToast(msg) {
+            const toast = document.createElement('div');
+            toast.className = "fixed bottom-6 right-6 z-50 bg-indigo-950/95 text-indigo-200 border border-indigo-500/40 px-4 py-2.5 dynamic-rounded shadow-2xl backdrop-blur-md text-xs font-mono animate-bounce flex items-center gap-2";
+            toast.innerHTML = `<span>✨</span><span>${msg}</span>`;
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 3500);
+        }
+
+        window.onload = function() {
+            initUniverseApp();
+            onWindowResize();
+        };
+    </script>
+</body>
+</html>
