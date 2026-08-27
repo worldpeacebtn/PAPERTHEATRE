@@ -1,1166 +1,219 @@
-<!DOCTYPE html>
-<html lang="en" class="dark">
+<!doctype html>
+<html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Quantum Paper Theater & Universe RPG Engine v3.2 (Gemini Powered)</title>
-    <!-- Tailwind CSS CDN -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            darkMode: 'class',
-            theme: {
-                extend: {
-                    colors: {
-                        cyber: {
-                            cyan: '#00ffcc',
-                            magenta: '#ff007f',
-                            purple: '#9d00ff',
-                            dark: '#070711',
-                            card: '#101026',
-                            surface: '#181838'
-                        }
-                    },
-                    fontFamily: {
-                        mono: ['Fira Code', 'monospace'],
-                        sans: ['Inter', 'sans-serif']
-                    }
-                }
-            }
-        }
-    </script>
-    <!-- Three.js CDN -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
-    <style>
-        body { font-family: 'Inter', sans-serif; background-color: #070711; color: #f1f5f9; overflow-x: hidden; }
-        .neon-glow-cyan { text-shadow: 0 0 12px rgba(0, 255, 204, 0.8), 0 0 24px rgba(0, 255, 204, 0.4); }
-        .neon-glow-magenta { text-shadow: 0 0 12px rgba(255, 0, 127, 0.8), 0 0 24px rgba(255, 0, 127, 0.4); }
-        .neon-border-cyan { box-shadow: 0 0 20px rgba(0, 255, 204, 0.3), inset 0 0 10px rgba(0, 255, 204, 0.1); border: 1px solid rgba(0, 255, 204, 0.6); }
-        .neon-border-magenta { box-shadow: 0 0 20px rgba(255, 0, 127, 0.3), inset 0 0 10px rgba(255, 0, 127, 0.1); border: 1px solid rgba(255, 0, 127, 0.6); }
-        canvas { display: block; width: 100%; height: 100%; }
-        .scanline {
-            background: linear-gradient(to bottom, rgba(255,255,255,0), rgba(255,255,255,0) 50%, rgba(0, 255, 204, 0.02) 50%, rgba(0, 255, 204, 0.02));
-            background-size: 100% 4px;
-        }
-        .no-scrollbar::-webkit-scrollbar { display: none; }
-        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-    </style>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Quantum Paperdoll: Utopia Hackers — X42</title>
+<style>
+:root{
+  --bg:#070b19;--panel:#0d1530;--panel2:#111d3e;--line:#38e7ff;
+  --pink:#ff55df;--purple:#a86cff;--green:#62f5a7;--text:#eaf5ff;
+  --muted:#91a8c9;--danger:#ff647d;--gold:#ffd66b;
+}
+*{box-sizing:border-box} body{margin:0;background:radial-gradient(circle at 20% 10%,#182557 0,#070b19 42%,#03050d 100%);color:var(--text);font-family:Inter,system-ui,Segoe UI,sans-serif;overflow:hidden}
+button,input,select{font:inherit} button{cursor:pointer}
+#app{height:100vh;display:grid;grid-template-rows:58px 1fr}
+.top{display:flex;align-items:center;gap:14px;padding:9px 14px;border-bottom:1px solid #284b78;background:linear-gradient(90deg,#101b3a,#0a1027);box-shadow:0 0 24px #00d9ff18}
+.logo{font-weight:900;letter-spacing:.7px;font-size:18px;text-shadow:0 0 12px #53e9ff}.sub{font-size:11px;color:var(--muted)}
+.tabs{margin-left:auto;display:flex;gap:7px}.tabs button,.top button{background:#101d3c;color:#dff7ff;border:1px solid #32658e;border-radius:9px;padding:8px 12px}.tabs button.active{border-color:var(--pink);box-shadow:0 0 12px #ff55df45}
+.layout{display:grid;grid-template-columns:260px minmax(480px,1fr) 330px;gap:10px;padding:10px;min-height:0}
+.panel{background:linear-gradient(180deg,#0e1834eF,#071022F5);border:1px solid #2d557f;border-radius:12px;box-shadow:0 0 18px #00182780;overflow:hidden}
+.panel h3{margin:0;padding:10px 12px;font-size:13px;border-bottom:1px solid #25456a;color:#ccecff}.body{padding:10px}
+.rooms{display:grid;gap:7px}.room{padding:11px;border:1px solid #274765;border-radius:9px;background:#0b1530;color:#cfe7ff;text-align:left}.room:hover,.room.active{border-color:var(--line);box-shadow:0 0 13px #00d9ff33}.room small{display:block;color:#7892b4;margin-top:3px}
+.stats{display:grid;gap:8px;margin-top:12px}.stat label{display:flex;justify-content:space-between;font-size:11px;color:#a9c0de}.bar{height:7px;background:#162a4b;border-radius:9px;overflow:hidden;margin-top:4px}.bar i{display:block;height:100%;background:linear-gradient(90deg,var(--green),#64e7ff,var(--pink))}
+#stage{position:relative;min-height:0;overflow:hidden;border-radius:12px;border:1px solid #315a86;background:#050a17}
+#scene{position:absolute;inset:0;perspective:900px;overflow:hidden;background:
+ radial-gradient(circle at 50% 22%,#233d79 0,#0e1937 34%,#050914 72%);
+}
+.neon-grid{position:absolute;left:-10%;right:-10%;bottom:-9%;height:52%;transform:rotateX(67deg);transform-origin:bottom;background-image:linear-gradient(#26dff822 1px,transparent 1px),linear-gradient(90deg,#26dff822 1px,transparent 1px);background-size:42px 42px;box-shadow:inset 0 30px 70px #061021}
+.wall{position:absolute;left:5%;right:5%;top:6%;height:58%;border:2px solid #315a91;background:linear-gradient(145deg,#111b39,#091126);box-shadow:0 0 30px #8b3cff20 inset}
+.wall:before,.wall:after{content:"";position:absolute;border:2px solid #36e6ff77;box-shadow:0 0 14px #36e6ff55}.wall:before{left:6%;right:52%;top:13%;bottom:13%}.wall:after{left:52%;right:6%;top:18%;bottom:18%}
+.room-title{position:absolute;top:18px;left:20px;font-weight:800;color:#dffaff;text-shadow:0 0 10px #36e6ff;font-size:16px}
+.console{position:absolute;background:#0a1530eF;border:1px solid #3c78a5;border-radius:7px;box-shadow:0 0 20px #00d9ff22;color:#8bf2ff;padding:7px;font-size:9px}
+.c1{left:10%;top:28%;width:30%;height:18%}.c2{right:10%;top:28%;width:31%;height:17%}.c3{left:30%;bottom:13%;width:39%;height:14%}
+.plant{position:absolute;right:4%;bottom:18%;width:50px;height:85px}.plant:before{content:"";position:absolute;bottom:0;left:15px;width:30px;height:28px;background:#563f7d;border-radius:4px 4px 13px 13px}.plant:after{content:"✦ ✧ ✦";position:absolute;top:8px;left:0;color:#63f5a6;font-size:28px;transform:rotate(-8deg)}
+.paperdoll{position:absolute;left:34%;bottom:11%;width:100px;height:220px;filter:drop-shadow(0 0 12px #ff55df55);transition:.2s}.head{position:absolute;left:28px;top:0;width:44px;height:50px;border-radius:50% 50% 46% 46%;background:linear-gradient(145deg,#f6c9b7,#d89588);border:2px solid #ffd4c9}.hair{position:absolute;left:17px;top:-9px;width:68px;height:79px;border-radius:55%;background:linear-gradient(90deg,#d7b6ff,#ff8bdc 48%,#d8a9ff);z-index:-1;box-shadow:0 0 10px #ff55df55}.ear{position:absolute;top:-18px;width:20px;height:32px;background:#d19dff;border:2px solid #ff91e8;transform:rotate(18deg);clip-path:polygon(50% 0,100% 100%,0 75%)}.ear.l{left:11px}.ear.r{right:8px;transform:scaleX(-1) rotate(18deg)}.eye{position:absolute;top:22px;width:6px;height:9px;background:#17213f;border-radius:50%}.eye.l{left:12px}.eye.r{right:12px}.body2{position:absolute;top:49px;left:25px;width:50px;height:83px;background:linear-gradient(90deg,#171f45,#3e255e,#161a3a);border:2px solid #bd77ff;clip-path:polygon(18% 0,82% 0,100% 100%,0 100%)}.coat{position:absolute;top:60px;left:11px;width:78px;height:105px;background:linear-gradient(90deg,#53265d,#8f285e,#292052);clip-path:polygon(18% 0,82% 0,100% 100%,67% 88%,50% 100%,33% 88%,0 100%);border:1px solid #ff6be4}.leg{position:absolute;top:129px;width:19px;height:75px;background:#242a48;border:2px solid #8b9bd3;border-radius:7px}.leg.l{left:28px}.leg.r{right:28px}.boot{position:absolute;top:195px;width:25px;height:18px;background:#0b1022;border:2px solid #ff55df;border-radius:5px}.boot.l{left:24px}.boot.r{right:24px}
+.interact{position:absolute;left:50%;bottom:5%;transform:translateX(-50%);display:flex;gap:8px}.interact button{background:#111a3bde;border:1px solid #4e7aa4;color:#e9fbff;padding:8px 12px;border-radius:8px}.interact button:hover{border-color:var(--pink)}
+#right{display:grid;grid-template-rows:1fr 1fr 1fr;gap:10px;min-height:0}.mini{min-height:0}.mini .body{height:calc(100% - 39px);overflow:auto}
+.filegrid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}.file{height:62px;border:1px solid #2c4e74;border-radius:7px;background:#0b1430;display:flex;align-items:center;justify-content:center;text-align:center;font-size:9px;color:#a9c8e9}.file.selected{border-color:var(--pink);box-shadow:0 0 12px #ff55df44}
+.wave{height:72px;margin-bottom:7px;display:flex;align-items:center;gap:2px}.wave i{width:3px;border-radius:4px;background:linear-gradient(#65f5aa,#ff55df);height:var(--h)}
+input[type=range]{width:100%}.meter{height:8px;background:#1a2c4b;border-radius:8px;overflow:hidden}.meter i{display:block;height:100%;width:63%;background:linear-gradient(90deg,#4cf5a1,#ff55df)}
+.editor{display:none;position:absolute;inset:0;background:#070b19f7;z-index:20;padding:16px}.editor.open{display:block}.editor-grid{display:grid;grid-template-columns:250px 1fr 280px;gap:10px;height:100%}.toolbox,.inspector{background:#0d1530;border:1px solid #31567d;border-radius:10px;padding:10px}.toolbox button{width:100%;margin:4px 0;text-align:left}.toolbox button,.inspector button{background:#111e3e;border:1px solid #315d87;color:#dff8ff;border-radius:7px;padding:8px}.edit-canvas{position:relative;border:1px solid #31567d;border-radius:10px;overflow:hidden;background:#081126}.edit-canvas .wall{top:7%;height:56%}.node{position:absolute;width:90px;height:52px;border:1px dashed #62f5ff;background:#0e2140cc;color:#dff;font-size:10px;padding:7px;border-radius:7px}.node.sel{border-color:#ff55df;box-shadow:0 0 16px #ff55df55}.n1{left:12%;top:18%}.n2{right:13%;top:31%}.n3{left:39%;top:57%}.hint{color:#87a5c7;font-size:11px;line-height:1.45}.row{display:flex;gap:6px;align-items:center}.row>*{flex:1}.kbd{font-family:monospace;color:#aef5ff;background:#091328;border:1px solid #294769;border-radius:4px;padding:2px 5px}
+.modal{position:fixed;inset:0;background:#02050bcc;display:none;align-items:center;justify-content:center;z-index:50}.modal.show{display:flex}.dialog{width:min(720px,92vw);max-height:88vh;overflow:auto;background:#0c1530;border:1px solid #4a75a1;border-radius:14px;box-shadow:0 0 40px #00d9ff22;padding:18px}.dialog h2{margin-top:0;color:#bff8ff}.code{font-family:monospace;letter-spacing:6px;font-size:28px;color:#7af5ff;text-align:center;padding:14px;border:1px solid #2d6480;border-radius:9px;background:#061025}.choices{display:grid;gap:8px;margin-top:12px}.choices button{padding:10px;background:#101e3d;border:1px solid #355e87;color:#e7f7ff;border-radius:8px;text-align:left}.choices button:hover{border-color:#ff55df}.success{color:#65f5a7}.fail{color:#ff7184}
+#toast{position:fixed;left:50%;bottom:18px;transform:translateX(-50%) translateY(20px);opacity:0;background:#0d1732;border:1px solid #42779c;padding:10px 16px;border-radius:9px;transition:.25s;z-index:100}.toast{opacity:1!important;transform:translateX(-50%) translateY(0)!important}
+@media(max-width:1000px){.layout{grid-template-columns:190px 1fr}.layout>#right{display:none}.editor-grid{grid-template-columns:180px 1fr}.inspector{display:none}}
+</style>
 </head>
-<body class="bg-cyber-dark text-slate-100 min-h-screen flex flex-col select-none scanline">
+<body>
+<div id="app">
+<header class="top">
+  <div><div class="logo">QUANTUM PAPERDOLL // CYBERTHRILLER</div><div class="sub">UTOPIA HACKERS · X42 EDITION · BUILD 0.9</div></div>
+  <div class="tabs"><button id="mapBtn" class="active">CASE MAP</button><button id="editorBtn">3D ROOM EDITOR</button><button id="saveBtn">SAVE</button></div>
+</header>
 
-    <!-- Top Navigation Header -->
-    <header class="w-full bg-cyber-card/90 backdrop-blur-md border-b border-cyber-cyan/30 px-4 py-3 flex flex-wrap justify-between items-center z-50 sticky top-0 shadow-lg">
-        <div class="flex items-center space-x-2">
-            <span class="text-2xl animate-pulse">🐇✨</span>
-            <div>
-                <h1 class="font-extrabold text-sm sm:text-base tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-cyber-cyan to-cyber-magenta">NEO-WONDERLAND 3.2 (GEMINI AI)</h1>
-                <p class="text-[10px] text-slate-400 font-mono hidden sm:block">Interactive 3D Paper Theater & Gemini LLM Engine</p>
-            </div>
-        </div>
-        <div class="flex items-center space-x-1 sm:space-x-2 overflow-x-auto py-1 no-scrollbar">
-            <button onclick="app.switchView('game')" class="px-2.5 sm:px-3 py-1.5 bg-cyan-950/60 hover:bg-cyan-900/80 border border-cyber-cyan/50 text-cyber-cyan text-xs font-semibold rounded-xl transition whitespace-nowrap shadow-[0_0_8px_rgba(0,255,204,0.2)]">🎭 <span class="hidden sm:inline">3D Stage</span></button>
-            <button onclick="app.switchView('aichat')" class="px-2.5 sm:px-3 py-1.5 bg-emerald-950/60 hover:bg-emerald-900/80 border border-emerald-500/50 text-emerald-300 text-xs font-semibold rounded-xl transition whitespace-nowrap">🤖 <span class="hidden sm:inline">AI Chat</span></button>
-            <button onclick="app.switchView('map')" class="px-2.5 sm:px-3 py-1.5 bg-indigo-950/60 hover:bg-indigo-900/80 border border-indigo-500/50 text-indigo-300 text-xs font-semibold rounded-xl transition whitespace-nowrap">🌌 <span class="hidden sm:inline">Universe Map</span></button>
-            <button onclick="app.switchView('house')" class="px-2.5 sm:px-3 py-1.5 bg-purple-950/60 hover:bg-purple-900/80 border border-purple-500/50 text-purple-300 text-xs font-semibold rounded-xl transition whitespace-nowrap">🏠 <span class="hidden sm:inline">Cyber House</span></button>
-            <button onclick="app.switchView('skills')" class="px-2.5 sm:px-3 py-1.5 bg-fuchsia-950/60 hover:bg-fuchsia-900/80 border border-cyber-magenta/50 text-cyber-magenta text-xs font-semibold rounded-xl transition whitespace-nowrap">📊 <span class="hidden sm:inline">Skills</span></button>
-            <button onclick="app.switchView('menu')" class="px-2.5 sm:px-3 py-1.5 bg-slate-900/60 hover:bg-slate-800 border border-slate-700 text-xs font-semibold rounded-xl transition whitespace-nowrap">💾 <span class="hidden sm:inline">Save</span></button>
-        </div>
-    </header>
-
-    <main class="flex-1 relative flex flex-col overflow-hidden">
-
-        <!-- VIEW 1: 3D STAGE & INTERACTIVE DIORAMA -->
-        <div id="view-game" class="flex-1 relative flex flex-col">
-            <!-- 3D Three.js Paper Theater Diorama Canvas -->
-            <div id="canvas-container" class="absolute inset-0 z-0"></div>
-
-            <!-- Top Camera Perspective & Action Toolbar -->
-            <div class="absolute top-3 left-1/2 transform -translate-x-1/2 z-20 flex flex-wrap justify-center gap-1.5 bg-cyber-card/90 backdrop-blur border border-cyber-cyan/30 px-3 py-1.5 rounded-2xl shadow-lg max-w-full">
-                <span class="text-[10px] text-slate-400 self-center font-mono hidden sm:inline">CAM:</span>
-                <button onclick="app.setCameraMode('bird')" class="px-2.5 py-1 text-[11px] font-semibold rounded-xl bg-cyan-500/20 text-cyber-cyan hover:bg-cyan-500/40 transition">🦅 Bird</button>
-                <button onclick="app.setCameraMode('follow')" class="px-2.5 py-1 text-[11px] font-semibold rounded-xl bg-magenta-500/20 text-cyber-magenta hover:bg-magenta-500/40 transition">📷 Follow</button>
-                <button onclick="app.setCameraMode('orbit')" class="px-2.5 py-1 text-[11px] font-semibold rounded-xl bg-purple-500/20 text-purple-300 hover:bg-purple-500/40 transition">🔄 360°</button>
-                <button onclick="app.triggerGeminiDirector()" class="px-2.5 py-1 text-[11px] font-semibold rounded-xl bg-emerald-500/20 text-emerald-300 hover:bg-emerald-500/40 transition border border-emerald-500/40">✨ AI Twist</button>
-                <button onclick="app.toggleNarrativeHUD()" class="px-2.5 py-1 text-[11px] font-semibold rounded-xl bg-slate-800 text-slate-200 hover:bg-slate-700 transition" title="Toggle Narrative Box">💬 HUD</button>
-            </div>
-
-            <!-- Floating Inventory & Quick Item Bar -->
-            <div id="inventory-panel" class="absolute top-16 right-3 z-20 flex flex-col space-y-2 transition-all duration-300">
-                <div class="bg-cyber-card/90 backdrop-blur border border-cyber-cyan/40 rounded-2xl p-3 shadow-xl text-xs space-y-2">
-                    <div class="font-bold text-cyber-cyan flex justify-between items-center">
-                        <span>🎒 Inventory</span>
-                        <div class="flex items-center space-x-2">
-                            <span id="inventory-count" class="bg-cyan-950 px-2 py-0.5 rounded-full text-[10px]">4 items</span>
-                            <button onclick="document.getElementById('inventory-panel').classList.toggle('hidden')" class="text-slate-400 hover:text-white text-[10px]" title="Close Inventory">✕</button>
-                        </div>
-                    </div>
-                    <div id="inventory-list" class="flex space-x-2">
-                        <span title="Quantum Carrot" class="cursor-pointer text-xl p-1 bg-slate-900 rounded-lg border border-slate-700 hover:scale-110 transition" onclick="app.useItem('carrot')">🥕</span>
-                        <span title="Neon Tea Cup" class="cursor-pointer text-xl p-1 bg-slate-900 rounded-lg border border-slate-700 hover:scale-110 transition" onclick="app.useItem('tea')">🍵</span>
-                        <span title="Star Fragment" class="cursor-pointer text-xl p-1 bg-slate-900 rounded-lg border border-slate-700 hover:scale-110 transition" onclick="app.useItem('star')">⭐</span>
-                        <span title="Fresh Apple" class="cursor-pointer text-xl p-1 bg-slate-900 rounded-lg border border-slate-700 hover:scale-110 transition" onclick="app.useItem('apple')">🍎</span>
-                    </div>
-                </div>
-            </div>
-
-            <!-- On-Screen Movement D-Pad for 3D Stage (Optimized for Mobile/Touch) -->
-            <div class="absolute bottom-20 left-4 z-20 bg-cyber-card/90 backdrop-blur border border-cyber-cyan/30 rounded-2xl p-3 shadow-2xl flex flex-col items-center">
-                <span class="text-[9px] font-mono text-cyan-300 mb-1 tracking-wider">TOUCH D-PAD</span>
-                <div class="grid grid-cols-3 gap-1.5 w-32">
-                    <div></div>
-                    <button ontouchstart="app.moveStagePlayer('up')" onclick="app.moveStagePlayer('up')" class="p-3 bg-cyan-950/90 active:bg-cyan-800 border border-cyan-500/60 text-cyber-cyan rounded-xl font-bold text-sm shadow-md transition transform active:scale-95">⬆️</button>
-                    <div></div>
-                    <button ontouchstart="app.moveStagePlayer('left')" onclick="app.moveStagePlayer('left')" class="p-3 bg-cyan-950/90 active:bg-cyan-800 border border-cyan-500/60 text-cyber-cyan rounded-xl font-bold text-sm shadow-md transition transform active:scale-95">⬅️</button>
-                    <button ontouchstart="app.interactStageObject()" onclick="app.interactStageObject()" class="p-3 bg-fuchsia-950/90 active:bg-fuchsia-800 border border-fuchsia-500/60 text-cyber-magenta rounded-xl font-bold text-xs shadow-md transition transform active:scale-95" title="Interact with tree/chair">💬</button>
-                    <button ontouchstart="app.moveStagePlayer('right')" onclick="app.moveStagePlayer('right')" class="p-3 bg-cyan-950/90 active:bg-cyan-800 border border-cyan-500/60 text-cyber-cyan rounded-xl font-bold text-sm shadow-md transition transform active:scale-95">➡️</button>
-                    <div></div>
-                    <button ontouchstart="app.moveStagePlayer('down')" onclick="app.moveStagePlayer('down')" class="p-3 bg-cyan-950/90 active:bg-cyan-800 border border-cyan-500/60 text-cyber-cyan rounded-xl font-bold text-sm shadow-md transition transform active:scale-95">⬇️</button>
-                    <div></div>
-                </div>
-            </div>
-
-            <!-- Compact Novel Dialogue Overlay Panel (Closeable/Minimizable) -->
-            <div id="narrative-hud" class="mt-auto z-20 p-3 sm:p-4 pointer-events-none flex justify-center transition-all duration-300">
-                <div class="w-full max-w-3xl bg-cyber-card/95 backdrop-blur-md neon-border-cyan rounded-2xl p-3 sm:p-4 pointer-events-auto shadow-2xl relative overflow-hidden flex flex-col space-y-2">
-                    <div class="flex justify-between items-center border-b border-cyber-cyan/20 pb-1.5">
-                        <div class="flex items-center space-x-2">
-                            <div id="speaker-avatar" class="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-cyan-950 border border-cyber-cyan flex items-center justify-center text-base sm:text-lg shadow-[0_0_8px_rgba(0,255,204,0.4)]">🐇</div>
-                            <div>
-                                <h3 id="speaker-name" class="font-bold text-xs sm:text-sm text-cyber-cyan tracking-wider">Alice 404</h3>
-                                <p id="speaker-archetype" class="text-[9px] text-slate-400 font-mono">Cyber Resistance</p>
-                            </div>
-                        </div>
-                        <div class="flex items-center space-x-2">
-                            <span class="text-[9px] font-mono text-slate-400 bg-slate-900/80 px-2 py-0.5 rounded-full border border-slate-800 hidden sm:inline">
-                                Scene: <span id="current-scene-id" class="text-cyber-magenta">neon_rabbit_hole_01</span>
-                            </span>
-                            <button onclick="app.toggleNarrativeHUD()" class="w-6 h-6 rounded-lg bg-slate-900 border border-slate-700 text-slate-300 hover:text-white flex items-center justify-center text-xs font-bold transition" title="Close HUD">✕</button>
-                        </div>
-                    </div>
-
-                    <div class="min-h-[35px] sm:min-h-[45px] flex items-center py-0.5">
-                        <p id="dialogue-text" class="text-slate-100 text-xs sm:text-sm leading-snug font-sans"></p>
-                    </div>
-
-                    <div id="choices-container" class="grid grid-cols-1 sm:grid-cols-2 gap-1.5 pt-1.5 border-t border-cyber-cyan/20">
-                        <!-- Populated dynamically -->
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- VIEW 2: AI COMPANION CHAT -->
-        <div id="view-aichat" class="hidden flex-1 p-4 sm:p-8 overflow-y-auto max-w-4xl mx-auto w-full flex flex-col space-y-4">
-            <div class="bg-cyber-card border border-emerald-500/40 rounded-3xl p-6 shadow-2xl flex flex-col h-[70vh]">
-                <div class="flex justify-between items-center border-b border-emerald-500/20 pb-4 mb-4">
-                    <div class="flex items-center space-x-3">
-                        <span class="text-3xl">🤖💬</span>
-                        <div>
-                            <h2 class="text-lg sm:text-xl font-extrabold text-emerald-300">Gemini Neural Link Chat</h2>
-                            <p class="text-xs text-slate-400">Directly converse with Alice 404 or Schrödinger's Cat powered by live Gemini AI.</p>
-                        </div>
-                    </div>
-                    <select id="ai-companion-select" class="bg-slate-900 border border-emerald-500/50 text-emerald-300 text-xs rounded-xl px-3 py-2 font-mono">
-                        <option value="Alice 404 (Cyber Resistance Leader)">Alice 404 (Resistance)</option>
-                        <option value="Schrödinger's Cat (Quantum Debugger)">Schrödinger's Cat (Quantum)</option>
-                        <option value="Cyber Hatter (Glitch Guru)">Cyber Hatter (Glitch Guru)</option>
-                    </select>
-                </div>
-
-                <div id="ai-chat-messages" class="flex-1 overflow-y-auto space-y-3 p-4 bg-slate-950/80 rounded-2xl border border-slate-900 text-xs sm:text-sm font-sans">
-                    <div class="bg-slate-900 p-3 rounded-xl border border-emerald-500/30 text-emerald-300 max-w-[85%]">
-                        <strong>Alice 404:</strong> Neural link established! Ask me anything about Neo-Wonderland, quantum code, or how to defeat the malware bugs.
-                    </div>
-                </div>
-
-                <div class="mt-4 flex space-x-2">
-                    <input type="text" id="ai-chat-input" placeholder="Type your message to Alice..." class="flex-1 bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-xs sm:text-sm text-slate-200 focus:border-emerald-500 outline-none" onkeypress="if(event.key==='Enter') app.sendAIChat()">
-                    <button onclick="app.sendAIChat()" class="px-6 py-3 bg-emerald-600 hover:bg-emerald-500 text-slate-950 font-bold text-xs rounded-xl transition">Transmit</button>
-                </div>
-            </div>
-        </div>
-
-        <!-- VIEW 3: UNIVERSE MAP -->
-        <div id="view-map" class="hidden flex-1 p-4 sm:p-8 overflow-y-auto max-w-5xl mx-auto w-full space-y-6">
-            <div class="bg-cyber-card border border-indigo-500/40 rounded-3xl p-6 sm:p-8 shadow-2xl space-y-6">
-                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-indigo-500/20 pb-4 gap-4">
-                    <div>
-                        <h2 class="text-xl sm:text-2xl font-extrabold text-indigo-300 tracking-wide">🌌 UNIVERSE OVERWORLD MAP & CYBER-HOUSE PROJECTIONS</h2>
-                        <p class="text-slate-400 text-xs sm:text-sm">Inspect planetary sectors or warp directly into projected Cyber-House rooms to collect evidence items!</p>
-                    </div>
-                    <div class="flex space-x-2">
-                        <button onclick="app.generateAIQuest()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-slate-950 font-bold text-xs rounded-xl transition">✨ Generate AI Quest</button>
-                        <button onclick="app.switchView('game')" class="px-4 py-2 bg-indigo-600 text-white font-bold text-xs rounded-xl hover:bg-indigo-500 transition">Back to Stage</button>
-                    </div>
-                </div>
-
-                <div id="ai-quest-display" class="hidden bg-emerald-950/40 border border-emerald-500/50 rounded-2xl p-5 space-y-2">
-                    <h3 class="font-bold text-emerald-300 text-sm flex items-center space-x-2"><span>📜</span><span id="ai-quest-title">AI Generated Mission</span></h3>
-                    <p id="ai-quest-desc" class="text-xs text-slate-300 leading-relaxed"></p>
-                </div>
-
-                <div id="map-inspector" class="bg-slate-900/90 border border-indigo-500/40 rounded-2xl p-4 text-xs font-mono text-indigo-200 shadow-inner">
-                    📡 Sector & House Telemetry: <span id="selected-sector-info" class="text-cyber-cyan">Select a planetary sector or house room below to project telemetry!</span>
-                </div>
-
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div onclick="app.inspectAndTravel('Sector 404: Cyber Rabbit Hole')" class="bg-slate-900/80 border border-cyber-cyan/40 rounded-2xl p-6 cursor-pointer hover:border-cyber-cyan hover:scale-[1.02] transition space-y-3 shadow-lg group">
-                        <div class="text-4xl group-hover:animate-bounce">🪐🐇</div>
-                        <h3 class="font-bold text-cyber-cyan text-base">Sector 404: Rabbit Hole</h3>
-                        <p class="text-xs text-slate-400">Neon tea parties, firewall leaks, and Hacker Mouse safehouses.</p>
-                        <div class="flex justify-between items-center pt-2">
-                            <span class="inline-block px-2.5 py-1 bg-cyan-950 text-cyber-cyan text-[10px] font-mono rounded-full border border-cyber-cyan/30">Status: Stable 🟢</span>
-                            <span class="text-xs text-cyber-cyan font-bold group-hover:translate-x-1 transition">Warp →</span>
-                        </div>
-                    </div>
-
-                    <div onclick="app.inspectAndTravel('Sector 707: Red Woods & Malware')" class="bg-slate-900/80 border border-cyber-magenta/40 rounded-2xl p-6 cursor-pointer hover:border-cyber-magenta hover:scale-[1.02] transition space-y-3 shadow-lg group">
-                        <div class="text-4xl group-hover:animate-bounce">🌕🐺</div>
-                        <h3 class="font-bold text-cyber-magenta text-base">Sector 707: Red Woods</h3>
-                        <p class="text-xs text-slate-400">Encrypted pine forests and Pauli-effect particle anomalies.</p>
-                        <div class="flex justify-between items-center pt-2">
-                            <span class="inline-block px-2.5 py-1 bg-fuchsia-950 text-cyber-magenta text-[10px] font-mono rounded-full border border-cyber-magenta/30">Status: Warning ⚠️</span>
-                            <span class="text-xs text-cyber-magenta font-bold group-hover:translate-x-1 transition">Warp →</span>
-                        </div>
-                    </div>
-
-                    <div onclick="app.inspectAndTravel('Sector 909: Schrödinger Quantum Box')" class="bg-slate-900/80 border border-purple-500/40 rounded-2xl p-6 cursor-pointer hover:border-purple-500 hover:scale-[1.02] transition space-y-3 shadow-lg group">
-                        <div class="text-4xl group-hover:animate-bounce">🌌🐱</div>
-                        <h3 class="font-bold text-purple-300 text-base">Sector 909: Quantum Box</h3>
-                        <p class="text-xs text-slate-400">Superposition realms where mice and cats coexist in parallel.</p>
-                        <div class="flex justify-between items-center pt-2">
-                            <span class="inline-block px-2.5 py-1 bg-purple-950 text-purple-300 text-[10px] font-mono rounded-full border border-purple-500/30">Status: Superposition ⚛️</span>
-                            <span class="text-xs text-purple-300 font-bold group-hover:translate-x-1 transition">Warp →</span>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Projected Cyber House Quick Switcher -->
-                <div class="border-t border-indigo-500/20 pt-4 space-y-3">
-                    <h3 class="text-sm font-bold text-indigo-300 flex items-center space-x-2"><span>🏠</span><span>Projected Cyber-House Rooms (Evidence Hub)</span></h3>
-                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                        <button onclick="app.switchHouseRoom('alice')" class="p-3 bg-slate-950 hover:bg-slate-900 border border-cyber-cyan/50 text-cyber-cyan rounded-2xl text-xs font-bold transition">🐰 Alice's Kitchen</button>
-                        <button onclick="app.switchHouseRoom('red')" class="p-3 bg-slate-950 hover:bg-slate-900 border border-cyber-magenta/50 text-cyber-magenta rounded-2xl text-xs font-bold transition">🐺 Red's Malware Den</button>
-                        <button onclick="app.switchHouseRoom('schrodinger')" class="p-3 bg-slate-950 hover:bg-slate-900 border border-purple-500/50 text-purple-300 rounded-2xl text-xs font-bold transition">🐱 Schrödinger's Box</button>
-                        <button onclick="app.switchHouseRoom('mouse')" class="p-3 bg-slate-950 hover:bg-slate-900 border border-emerald-500/50 text-emerald-300 rounded-2xl text-xs font-bold transition">🐁 Hacker Mouse HQ</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- VIEW 4: CYBER HOUSE -->
-        <div id="view-house" class="hidden flex-1 p-4 sm:p-8 overflow-y-auto max-w-5xl mx-auto w-full space-y-6">
-            <div class="bg-cyber-card border border-purple-500/40 rounded-3xl p-6 sm:p-8 shadow-2xl space-y-6">
-                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-purple-500/20 pb-4 gap-4">
-                    <div>
-                        <h2 id="house-room-title" class="text-xl sm:text-2xl font-extrabold text-purple-300 tracking-wide">🏠 CYBER-HOUSE 404: ALICE'S KITCHEN</h2>
-                        <p class="text-slate-400 text-xs sm:text-sm">Explore indoor evidence rooms, replace corrupted items, and uncover Hacker Mouse clues!</p>
-                    </div>
-                    <div class="flex space-x-2">
-                        <button onclick="app.switchView('map')" class="px-3 py-2 bg-indigo-600 text-white font-bold text-xs rounded-xl hover:bg-indigo-500 transition">Map View</button>
-                        <button onclick="app.switchView('game')" class="px-3 py-2 bg-purple-600 text-white font-bold text-xs rounded-xl hover:bg-purple-500 transition">Back to Stage</button>
-                    </div>
-                </div>
-
-                <!-- Room Switcher Tabs -->
-                <div class="flex space-x-2 overflow-x-auto pb-1 no-scrollbar">
-                    <button onclick="app.switchHouseRoom('alice')" class="px-3 py-1.5 bg-cyan-950 hover:bg-cyan-900 border border-cyber-cyan text-cyber-cyan text-xs font-semibold rounded-xl whitespace-nowrap">🐰 Alice's Kitchen</button>
-                    <button onclick="app.switchHouseRoom('red')" class="px-3 py-1.5 bg-fuchsia-950 hover:bg-fuchsia-900 border border-cyber-magenta text-cyber-magenta text-xs font-semibold rounded-xl whitespace-nowrap">🐺 Red's Den</button>
-                    <button onclick="app.switchHouseRoom('schrodinger')" class="px-3 py-1.5 bg-purple-950 hover:bg-purple-900 border border-purple-500 text-purple-300 text-xs font-semibold rounded-xl whitespace-nowrap">🐱 Schrödinger's Box</button>
-                    <button onclick="app.switchHouseRoom('mouse')" class="px-3 py-1.5 bg-emerald-950 hover:bg-emerald-900 border border-emerald-500 text-emerald-300 text-xs font-semibold rounded-xl whitespace-nowrap">🐁 Hacker Mouse HQ</button>
-                </div>
-
-                <div class="bg-slate-950 border border-purple-500/30 rounded-2xl p-6 relative flex flex-col items-center justify-center min-h-[300px]">
-                    <div id="house-room-display" class="grid grid-cols-5 gap-3 p-4 bg-slate-900/80 rounded-2xl border border-slate-800 shadow-inner">
-                        <!-- Populated via JS -->
-                    </div>
-                    <p id="house-interaction-log" class="mt-4 text-xs font-mono text-cyan-300 bg-slate-900 px-4 py-2 rounded-xl border border-slate-800 text-center">
-                        💡 Use D-pad or Arrow keys to move around and inspect evidence items (📁, 🔍, 🍵)!
-                    </p>
-
-                    <div class="grid grid-cols-3 gap-2 mt-4 w-40">
-                        <div></div>
-                        <button onclick="app.moveHousePlayer('up')" class="p-3 bg-purple-950 hover:bg-purple-900 border border-purple-500 text-purple-300 rounded-xl font-bold">⬆️</button>
-                        <div></div>
-                        <button onclick="app.moveHousePlayer('left')" class="p-3 bg-purple-950 hover:bg-purple-900 border border-purple-500 text-purple-300 rounded-xl font-bold">⬅️</button>
-                        <button onclick="app.moveHousePlayer('inspect')" class="p-3 bg-cyan-950 hover:bg-cyan-900 border border-cyan-500 text-cyber-cyan rounded-xl font-bold text-xs" title="Inspect/Collect Evidence">🔍</button>
-                        <button onclick="app.moveHousePlayer('right')" class="p-3 bg-purple-950 hover:bg-purple-900 border border-purple-500 text-purple-300 rounded-xl font-bold">➡️</button>
-                        <div></div>
-                        <button onclick="app.moveHousePlayer('down')" class="p-3 bg-purple-950 hover:bg-purple-900 border border-purple-500 text-purple-300 rounded-xl font-bold">⬇️</button>
-                        <div></div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- VIEW 5: SKILLS & HEARTS -->
-        <div id="view-skills" class="hidden flex-1 p-4 sm:p-8 overflow-y-auto max-w-5xl mx-auto w-full space-y-6">
-            <div class="bg-cyber-card border border-cyber-magenta/40 rounded-3xl p-6 sm:p-8 shadow-2xl space-y-8">
-                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-cyber-magenta/20 pb-4 gap-4">
-                    <div>
-                        <h2 class="text-xl sm:text-2xl font-extrabold text-cyber-magenta tracking-wide">📊 CHARACTER RELATIONSHIPS & SKILLSET TREE</h2>
-                        <p class="text-slate-400 text-xs sm:text-sm">Manage heart affinity levels, upgrade neural combat perks, and check companion loyalty.</p>
-                    </div>
-                    <button onclick="app.switchView('game')" class="px-4 py-2 bg-cyber-magenta text-slate-950 font-bold text-xs rounded-xl hover:opacity-90 transition">Back to Stage</button>
-                </div>
-
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div class="bg-slate-900/60 border border-slate-800 rounded-2xl p-6 space-y-4">
-                        <h3 class="font-bold text-cyber-cyan flex items-center space-x-2"><span>💖</span><span>Companion Affinity Meters</span></h3>
-                        <div class="space-y-3">
-                            <div>
-                                <div class="flex justify-between text-xs font-mono mb-1"><span>Alice 404 (Resistance)</span><span class="text-cyber-cyan">92% (❤️❤️❤️❤️❤️)</span></div>
-                                <div class="w-full bg-slate-950 h-2.5 rounded-full overflow-hidden border border-slate-800"><div class="bg-cyber-cyan h-full w-[92%]"></div></div>
-                            </div>
-                            <div>
-                                <div class="flex justify-between text-xs font-mono mb-1"><span>Red Riding Hood (Anti-Malware)</span><span class="text-cyber-magenta">85% (❤️❤️❤️❤️🤍)</span></div>
-                                <div class="w-full bg-slate-950 h-2.5 rounded-full overflow-hidden border border-slate-800"><div class="bg-cyber-magenta h-full w-[85%]"></div></div>
-                            </div>
-                            <div>
-                                <div class="flex justify-between text-xs font-mono mb-1"><span>Schrödinger's Cat (Quantum)</span><span class="text-purple-400">78% (❤️❤️❤️🤍🤍)</span></div>
-                                <div class="w-full bg-slate-950 h-2.5 rounded-full overflow-hidden border border-slate-800"><div class="bg-purple-500 h-full w-[78%]"></div></div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="bg-slate-900/60 border border-slate-800 rounded-2xl p-6 space-y-4">
-                        <h3 class="font-bold text-cyber-magenta flex items-center space-x-2"><span>⚡</span><span>Cyber Skill Tree Perks</span></h3>
-                        <div class="space-y-3">
-                            <div class="flex justify-between items-center bg-slate-950 p-3 rounded-xl border border-slate-800">
-                                <div>
-                                    <h4 class="font-bold text-xs text-slate-100">Overclocked Neural Tea 🍵</h4>
-                                    <p class="text-[10px] text-slate-400">Boosts dialogue choice XP gain by +25%</p>
-                                </div>
-                                <span class="px-2.5 py-1 bg-emerald-950 text-emerald-400 text-[10px] font-mono rounded-lg border border-emerald-500/40">Unlocked ✓</span>
-                            </div>
-                            <div class="flex justify-between items-center bg-slate-950 p-3 rounded-xl border border-slate-800">
-                                <div>
-                                    <h4 class="font-bold text-xs text-slate-100">Rainbow Rabbit Warp 🌈</h4>
-                                    <p class="text-[10px] text-slate-400">Unlocks universe sector warp speed & star collection</p>
-                                </div>
-                                <span class="px-2.5 py-1 bg-emerald-950 text-emerald-400 text-[10px] font-mono rounded-lg border border-emerald-500/40">Unlocked ✓</span>
-                            </div>
-                            <div class="flex justify-between items-center bg-slate-950 p-3 rounded-xl border border-slate-800">
-                                <div>
-                                    <h4 class="font-bold text-xs text-slate-100">Quantum Firewall Buster 🛡️</h4>
-                                    <p class="text-[10px] text-slate-400">Instantly defeats rogue malware drone bugs</p>
-                                </div>
-                                <button onclick="app.upgradeSkill()" class="px-3 py-1 bg-cyber-magenta text-slate-950 font-bold text-[10px] rounded-lg hover:opacity-90">Upgrade (5 ⭐)</button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- VIEW 6: SAVE MENU -->
-        <div id="view-menu" class="hidden flex-1 p-4 sm:p-8 overflow-y-auto max-w-5xl mx-auto w-full">
-            <div class="bg-cyber-card border border-cyber-cyan/40 rounded-3xl p-6 sm:p-8 shadow-2xl space-y-6">
-                <div class="flex justify-between items-center border-b border-cyber-cyan/20 pb-4">
-                    <div>
-                        <h2 class="text-xl sm:text-2xl font-extrabold text-cyber-cyan tracking-wide">💾 SYSTEM MENU & GAME STATES</h2>
-                        <p class="text-slate-400 text-xs sm:text-sm">Save your progress across quantum timelines or upload custom sprites.</p>
-                    </div>
-                    <button onclick="app.switchView('game')" class="px-4 py-2 bg-cyber-cyan text-cyber-dark font-bold text-xs rounded-xl hover:bg-cyan-400 transition">Resume</button>
-                </div>
-
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div class="bg-slate-900/60 border border-slate-800 rounded-2xl p-6 space-y-4">
-                        <h3 class="text-base font-bold text-cyber-magenta flex items-center space-x-2"><span>💾</span><span>Save / Load State</span></h3>
-                        <div class="flex space-x-3">
-                            <button onclick="app.saveGame()" class="flex-1 py-3 bg-cyan-950 hover:bg-cyan-900 border border-cyber-cyan/50 text-cyber-cyan font-bold text-xs rounded-xl transition">Save Timeline</button>
-                            <button onclick="app.loadGame()" class="flex-1 py-3 bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs rounded-xl transition">Load Save</button>
-                        </div>
-                        <div id="save-status" class="text-xs font-mono text-emerald-400"></div>
-                    </div>
-
-                    <div class="bg-slate-900/60 border border-slate-800 rounded-2xl p-6 space-y-4">
-                        <h3 class="text-base font-bold text-cyber-cyan flex items-center space-x-2"><span>🎨</span><span>Pixel Sprite Uploader</span></h3>
-                        <input type="file" id="sprite-file-input" accept="image/*" class="w-full text-xs text-slate-400 file:mr-2 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-cyber-magenta file:text-slate-950 cursor-pointer">
-                        <input type="text" id="new-char-name" placeholder="Character Name" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-200">
-                        <button onclick="app.registerCustomCharacter()" class="w-full py-2.5 bg-gradient-to-r from-cyber-cyan to-cyber-magenta text-slate-950 font-bold text-xs rounded-xl">Inject into Theater</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-    </main>
-
-    <!-- Modals for Minigames and Messages -->
-    <div id="modal-minigame" class="fixed inset-0 bg-cyber-dark/85 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
-        <div class="bg-cyber-card border border-cyber-cyan rounded-3xl max-w-lg w-full p-6 shadow-2xl relative space-y-4">
-            <button onclick="app.closeMinigame()" class="absolute top-4 right-4 text-slate-400 hover:text-white font-bold">✕</button>
-            <div id="minigame-content"></div>
-        </div>
+<div class="layout">
+<aside class="panel">
+  <h3>CASE ROOMS</h3><div class="body">
+    <div class="rooms" id="rooms"></div>
+    <div class="stats">
+      <div class="stat"><label>HAPPINESS <span id="happyV">74%</span></label><div class="bar"><i id="happyB" style="width:74%"></i></div></div>
+      <div class="stat"><label>FOCUS <span id="focusV">81%</span></label><div class="bar"><i id="focusB" style="width:81%"></i></div></div>
+      <div class="stat"><label>EVIDENCE SYNC <span id="syncV">32%</span></label><div class="bar"><i id="syncB" style="width:32%"></i></div></div>
     </div>
+    <p class="hint">Every room contains clues, optional challenges and branching dialogue. Your choices alter the case board.</p>
+  </div>
+</aside>
 
-    <div id="modal-message" class="fixed inset-0 bg-cyber-dark/85 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
-        <div class="bg-cyber-card border border-cyber-magenta rounded-2xl max-w-sm w-full p-6 text-center space-y-4 shadow-2xl">
-            <div id="msg-icon" class="text-3xl">✨</div>
-            <h3 id="msg-title" class="font-bold text-base text-cyber-magenta">Notice</h3>
-            <p id="msg-text" class="text-xs text-slate-300"></p>
-            <button onclick="document.getElementById('modal-message').classList.add('hidden')" class="w-full py-2.5 bg-cyber-magenta text-slate-950 font-bold text-xs rounded-xl">Got it</button>
-        </div>
+<main id="stage">
+  <div id="scene">
+    <div class="room-title" id="roomTitle">ROOM 01 · QUANTUM LAB</div>
+    <div class="wall"></div><div class="neon-grid"></div>
+    <div class="console c1">SYS/CONSOLE<br><span style="color:#63f5a6">FIREWALL: ACTIVE</span><br><span style="color:#ff55df">TRACE: 17%</span></div>
+    <div class="console c2">EVIDENCE NODE<br><span>██ ███ █ ███</span><br><span style="color:#63f5a6">SYNC READY</span></div>
+    <div class="console c3">AUDIO ENGINE // BPM 128<br><span style="color:#ff8be9">♪ ▮▮▮ ▮▮ ▮▮▮▮ ♪</span></div>
+    <div class="plant"></div>
+    <div class="paperdoll" id="doll">
+      <div class="hair"></div><div class="ear l"></div><div class="ear r"></div>
+      <div class="head"><div class="eye l"></div><div class="eye r"></div></div>
+      <div class="body2"></div><div class="coat"></div><div class="leg l"></div><div class="leg r"></div><div class="boot l"></div><div class="boot r"></div>
     </div>
-
-    <script>
-        const CHARACTERS = {
-            alice: { name: "Alice 404", archetype: "Cyber-Resistance Leader", emoji: "🐰⚡", color: "#00ffcc" },
-            red: { name: "Red Riding Hood", archetype: "Anti-Malware Operative", emoji: "🐺 Hood", color: "#ff007f" },
-            schrodinger: { name: "Schrödinger's Cat", archetype: "Quantum Debugger", emoji: "🐱📦", color: "#9d00ff" },
-            madhatter: { name: "Cyber Hatter", archetype: "Overclocked Glitch Guru", emoji: "🎩⚡", color: "#eab308" },
-            mouse: { name: "Hacker Mouse", archetype: "Underground Symbol & Info Broker", emoji: "🐁💻", color: "#10b981" }
-        };
-
-        const SCENES = [
-            {
-                sceneId: "neon_rabbit_hole_01",
-                speaker: "alice",
-                text: "Bro, the Pauli exclusion effect is messing up our tea cups. Check the Hacker Mouse evidence folders in the Cyber-House!",
-                cameraPerspective: "bird",
-                choices: [
-                    { text: "🍎 Inspect Apple Tree Evidence", action: "tree" },
-                    { text: "🐁 Search Hacker Mouse HQ", action: "house_mouse" }
-                ]
-            },
-            {
-                sceneId: "firewall_debug_02",
-                speaker: "red",
-                text: "Anti-malware cloak active. The wolf botnet left encrypted packet evidence in the Red Woods.",
-                cameraPerspective: "follow",
-                choices: [
-                    { text: "⚔️ Fight Rogue Bug", triggerBattle: true },
-                    { text: "🐺 Enter Red's Malware Den", action: "house_red" }
-                ]
-            },
-            {
-                sceneId: "quantum_tea_03",
-                speaker: "schrodinger",
-                text: "I'm simultaneously asleep and awake in the box room, but someone replaced my quantum fish with a mouse icon!",
-                cameraPerspective: "orbit",
-                choices: [
-                    { text: "🌈 Star Warp Minigame", triggerMinigame: "rainbow_rabbit" },
-                    { text: "🐱 Enter Schrödinger's Box Room", action: "house_schrodinger" }
-                ]
-            }
-        ];
-
-        class PaperTheaterEngine {
-            constructor() {
-                this.container = document.getElementById('canvas-container');
-                this.scene = new THREE.Scene();
-                this.camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
-                this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-                this.clock = new THREE.Clock();
-                
-                this.cameraMode = 'bird';
-                this.targetCameraPos = new THREE.Vector3(0, 12, 10);
-                this.targetCameraLook = new THREE.Vector3(0, 0, 0);
-
-                // Stage interactive elements
-                this.playerPos = { x: 0, z: 0 };
-                this.objects = [];
-                this.particles = [];
-
-                this.init();
-            }
-
-            init() {
-                this.renderer.setSize(this.container.clientWidth, this.container.clientHeight);
-                this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-                this.container.appendChild(this.renderer.domElement);
-
-                // Lighting
-                const ambientLight = new THREE.AmbientLight(0xffffff, 0.9);
-                this.scene.add(ambientLight);
-
-                const cyanLight = new THREE.PointLight(0x00ffcc, 2.5, 60);
-                cyanLight.position.set(-8, 8, 8);
-                this.scene.add(cyanLight);
-
-                const magentaLight = new THREE.PointLight(0xff007f, 2.5, 60);
-                magentaLight.position.set(8, 8, -8);
-                this.scene.add(magentaLight);
-
-                // Stage Platform & Grid
-                const gridHelper = new THREE.GridHelper(30, 30, 0x00ffcc, 0xff007f);
-                gridHelper.position.y = -0.1;
-                this.scene.add(gridHelper);
-
-                // Create Stage Diorama Props (Trees, Chairs, NPCs)
-                this.createDioramaEnvironment();
-                this.createPlayerCharacter();
-                this.createArtsyAtmosphere(80);
-
-                window.addEventListener('resize', () => this.onWindowResize());
-                this.animate();
-            }
-
-            createDioramaEnvironment() {
-                // 1. Neon Glowing Tree with Apples
-                this.treeGroup = new THREE.Group();
-                const trunkGeo = new THREE.CylinderGeometry(0.3, 0.4, 3, 8);
-                const trunkMat = new THREE.MeshBasicMaterial({ color: 0x9d00ff });
-                const trunk = new THREE.Mesh(trunkGeo, trunkMat);
-                trunk.position.y = 1.5;
-                this.treeGroup.add(trunk);
-
-                const foliageGeo = new THREE.SphereGeometry(1.6, 8, 8);
-                const foliageMat = new THREE.MeshBasicMaterial({ color: 0x00ffcc, wireframe: true });
-                const foliage = new THREE.Mesh(foliageGeo, foliageMat);
-                foliage.position.y = 3.2;
-                this.treeGroup.add(foliage);
-
-                // Apple Fruits on tree
-                this.appleGroup = new THREE.Group();
-                for (let i = 0; i < 4; i++) {
-                    const appleGeo = new THREE.SphereGeometry(0.2, 8, 8);
-                    const appleMat = new THREE.MeshBasicMaterial({ color: 0xff007f });
-                    const apple = new THREE.Mesh(appleGeo, appleMat);
-                    const angle = (i / 4) * Math.PI * 2;
-                    apple.position.set(Math.cos(angle) * 1.1, 3.2 + Math.sin(i) * 0.4, Math.sin(angle) * 1.1);
-                    this.appleGroup.add(apple);
-                }
-                this.treeGroup.add(this.appleGroup);
-                this.treeGroup.position.set(-4, 0, -3);
-                this.scene.add(this.treeGroup);
-
-                // 2. Cybernetic Chair / Bench
-                const chairGroup = new THREE.Group();
-                const seatGeo = new THREE.BoxGeometry(1.2, 0.2, 1.2);
-                const chairMat = new THREE.MeshBasicMaterial({ color: 0xff007f });
-                const seat = new THREE.Mesh(seatGeo, chairMat);
-                seat.position.y = 0.6;
-                chairGroup.add(seat);
-                
-                const backGeo = new THREE.BoxGeometry(1.2, 1.2, 0.2);
-                const back = new THREE.Mesh(backGeo, chairMat);
-                back.position.set(0, 1.2, -0.5);
-                chairGroup.add(back);
-                chairGroup.position.set(3, 0, -2);
-                this.scene.add(chairGroup);
-
-                // 3. Companion NPC Standee (Red Riding Hood)
-                const npcCanvas = document.createElement('canvas');
-                npcCanvas.width = 128; npcCanvas.height = 128;
-                const nCtx = npcCanvas.getContext('2d');
-                nCtx.font = '80px sans-serif'; nCtx.textAlign = 'center'; nCtx.textBaseline = 'middle';
-                nCtx.fillText('🐺', 64, 64);
-                const npcTex = new THREE.CanvasTexture(npcCanvas);
-                const npcMat = new THREE.MeshBasicMaterial({ map: npcTex, transparent: true });
-                const npcMesh = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), npcMat);
-                npcMesh.position.set(3, 1, 2);
-                this.scene.add(npcMesh);
-            }
-
-            createPlayerCharacter() {
-                const canvas = document.createElement('canvas');
-                canvas.width = 128; canvas.height = 128;
-                const ctx = canvas.getContext('2d');
-                ctx.fillStyle = 'rgba(18, 18, 43, 0.85)';
-                ctx.roundRect(12, 12, 104, 104, 20);
-                ctx.fill();
-                ctx.strokeStyle = '#00ffcc'; ctx.lineWidth = 6; ctx.stroke();
-                ctx.font = '64px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-                ctx.fillText('🐇✨', 64, 64);
-
-                const texture = new THREE.CanvasTexture(canvas);
-                const material = new THREE.MeshBasicMaterial({ map: texture, transparent: true });
-                const geometry = new THREE.PlaneGeometry(2.5, 2.5);
-                
-                this.playerMesh = new THREE.Mesh(geometry, material);
-                this.playerMesh.position.set(0, 1.2, 0);
-                this.scene.add(this.playerMesh);
-            }
-
-            updatePlayerPosition(x, z) {
-                this.playerPos.x = Math.max(-6, Math.min(6, x));
-                this.playerPos.z = Math.max(-6, Math.min(6, z));
-            }
-
-            createArtsyAtmosphere(count) {
-                const symbols = ['✨', '🦋', '⭐', '🌸'];
-                for (let i = 0; i < count; i++) {
-                    const canvas = document.createElement('canvas');
-                    canvas.width = 48; canvas.height = 48;
-                    const ctx = canvas.getContext('2d');
-                    ctx.font = '24px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-                    ctx.fillText(symbols[Math.floor(Math.random() * symbols.length)], 24, 24);
-
-                    const texture = new THREE.CanvasTexture(canvas);
-                    const material = new THREE.MeshBasicMaterial({ map: texture, transparent: true });
-                    const mesh = new THREE.Mesh(new THREE.PlaneGeometry(0.5, 0.5), material);
-
-                    mesh.position.set(
-                        (Math.random() - 0.5) * 25,
-                        Math.random() * 8,
-                        (Math.random() - 0.5) * 25
-                    );
-                    mesh.userData = { speedY: Math.random() * 0.01 + 0.005, rot: (Math.random() - 0.5) * 0.02 };
-                    this.scene.add(mesh);
-                    this.particles.push(mesh);
-                }
-            }
-
-            setCameraMode(mode) {
-                this.cameraMode = mode;
-                if (mode === 'bird') {
-                    this.targetCameraPos.set(0, 15, 10);
-                    this.targetCameraLook.set(0, 0, 0);
-                } else if (mode === 'follow') {
-                    this.targetCameraPos.set(0, 4, 6);
-                } else if (mode === 'orbit') {
-                    this.targetCameraPos.set(8, 6, 8);
-                    this.targetCameraLook.set(0, 0, 0);
-                }
-            }
-
-            animate() {
-                requestAnimationFrame(() => this.animate());
-                const elapsedTime = this.clock.getElapsedTime();
-
-                if (this.playerMesh) {
-                    this.playerMesh.position.x += (this.playerPos.x - this.playerMesh.position.x) * 0.1;
-                    this.playerMesh.position.z += (this.playerPos.z - this.playerMesh.position.z) * 0.1;
-                    this.playerMesh.position.y = 1.2 + Math.sin(elapsedTime * 3) * 0.1;
-                }
-
-                if (this.cameraMode === 'follow' && this.playerMesh) {
-                    this.targetCameraPos.set(this.playerMesh.position.x, 5, this.playerMesh.position.z + 5);
-                    this.targetCameraLook.copy(this.playerMesh.position);
-                } else if (this.cameraMode === 'orbit') {
-                    const radius = 9;
-                    this.camera.position.x = Math.cos(elapsedTime * 0.3) * radius;
-                    this.camera.position.z = Math.sin(elapsedTime * 0.3) * radius;
-                    this.camera.position.y = 4 + Math.sin(elapsedTime * 0.2) * 1;
-                    this.targetCameraLook.set(0, 0, 0);
-                }
-
-                this.camera.position.lerp(this.targetCameraPos, 0.05);
-                this.camera.lookAt(this.targetCameraLook);
-
-                this.particles.forEach(p => {
-                    p.position.y += p.userData.speedY;
-                    p.rotation.z += p.userData.rot;
-                    if (p.position.y > 9) p.position.y = 0;
-                });
-
-                this.renderer.render(this.scene, this.camera);
-            }
-
-            onWindowResize() {
-                const width = this.container.clientWidth;
-                const height = this.container.clientHeight;
-                this.camera.aspect = width / height;
-                this.camera.updateProjectionMatrix();
-                this.renderer.setSize(width, height);
-            }
-        }
-
-        class AppController {
-            constructor() {
-                this.currentSceneIdx = 0;
-                this.customCharacters = [];
-                this.inventory = ['🥕', '🍵', '⭐', '🍎', '📁 Evidence #1'];
-                this.theater = null;
-                this.currentHouseRoom = 'alice';
-                this.housePlayerPos = { x: 2, y: 2 };
-                this.houseRooms = {
-                    alice: {
-                        name: "Alice's Quantum Kitchen",
-                        items: { '4,1': '🍵', '1,3': '📁', '3,3': '🐁' },
-                        desc: "Alice's messy kitchen where quantum tea pots leak Gen-Z sarcasm and resistance evidence."
-                    },
-                    red: {
-                        name: "Red's Anti-Malware Den",
-                        items: { '1,1': '🐺', '4,3': '📁', '2,4': '🛡️' },
-                        desc: "Encrypted forest bunker filled with firewall logs and wolf botnet traps."
-                    },
-                    schrodinger: {
-                        name: "Schrödinger's Box Room",
-                        items: { '2,2': '🐱', '0,0': '📁', '4,4': '📦' },
-                        desc: "Superposition laboratory where cats observe boxes and trigger Pauli effect glitches."
-                    },
-                    mouse: {
-                        name: "Hacker Mouse Underground HQ",
-                        items: { '2,0': '🐁', '1,2': '💻', '3,4': '📁' },
-                        desc: "The secret hacker mouse network room where all underground evidence files are synced."
-                    }
-                };
-            }
-
-            async callGeminiAPI(systemPrompt, userPrompt) {
-                const apiKey = "";
-                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
-                const payload = {
-                    contents: [{ parts: [{ text: userPrompt }] }],
-                    systemInstruction: { parts: [{ text: systemPrompt }] }
-                };
-
-                let delay = 1000;
-                for (let attempt = 0; attempt < 3; attempt++) {
-                    try {
-                        const response = await fetch(apiUrl, {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify(payload)
-                        });
-                        const result = await response.json();
-                        const candidate = result.candidates?.[0];
-                        if (candidate && candidate.content?.parts?.[0]?.text) {
-                            return candidate.content.parts[0].text;
-                        }
-                    } catch (e) {
-                        console.debug('Gemini API retry attempt', attempt);
-                    }
-                    await new Promise(resolve => setTimeout(resolve, delay));
-                    delay *= 2;
-                }
-                return "Quantum connection unstable. The firewall blocked the AI transmission!";
-            }
-
-            init() {
-                this.theater = new PaperTheaterEngine();
-                this.loadScene(0);
-                this.renderHouseGrid();
-                this.setupKeyboardControls();
-            }
-
-            setupKeyboardControls() {
-                window.addEventListener('keydown', (e) => {
-                    const activeView = document.getElementById('view-game');
-                    if (!activeView.classList.contains('hidden')) {
-                        if (['ArrowUp', 'KeyW'].includes(e.code)) { e.preventDefault(); this.moveStagePlayer('up'); }
-                        if (['ArrowDown', 'KeyS'].includes(e.code)) { e.preventDefault(); this.moveStagePlayer('down'); }
-                        if (['ArrowLeft', 'KeyA'].includes(e.code)) { e.preventDefault(); this.moveStagePlayer('left'); }
-                        if (['ArrowRight', 'KeyD'].includes(e.code)) { e.preventDefault(); this.moveStagePlayer('right'); }
-                        if (['KeyE', 'Space'].includes(e.code)) { e.preventDefault(); this.interactStageObject(); }
-                    }
-                });
-            }
-
-            toggleNarrativeHUD() {
-                const hud = document.getElementById('narrative-hud');
-                hud.classList.toggle('hidden');
-            }
-
-            switchView(viewName) {
-                ['game', 'aichat', 'map', 'house', 'skills', 'menu'].forEach(v => {
-                    document.getElementById(`view-${v}`).classList.add('hidden');
-                });
-                document.getElementById(`view-${viewName}`).classList.remove('hidden');
-                if (viewName === 'game' && this.theater) {
-                    setTimeout(() => this.theater.onWindowResize(), 50);
-                }
-            }
-
-            switchHouseRoom(roomKey) {
-                this.currentHouseRoom = roomKey;
-                const room = this.houseRooms[roomKey];
-                document.getElementById('house-room-title').innerText = `🏠 CYBER-HOUSE 404: ${room.name.toUpperCase()}`;
-                document.getElementById('house-interaction-log').innerText = `💡 Entered ${room.name}. ${room.desc}`;
-                this.housePlayerPos = { x: 2, y: 2 };
-                this.renderHouseGrid();
-                this.switchView('house');
-            }
-
-            setCameraMode(mode) {
-                if (this.theater) this.theater.setCameraMode(mode);
-            }
-
-            moveStagePlayer(dir) {
-                if (!this.theater) return;
-                const step = 1.2;
-                let nx = this.theater.playerPos.x;
-                let nz = this.theater.playerPos.z;
-                if (dir === 'up') nz -= step;
-                if (dir === 'down') nz += step;
-                if (dir === 'left') nx -= step;
-                if (dir === 'right') nx += step;
-                this.theater.updatePlayerPosition(nx, nz);
-            }
-
-            interactStageObject() {
-                if (!this.theater) return;
-                const px = this.theater.playerPos.x;
-                const pz = this.theater.playerPos.z;
-
-                const distTree = Math.hypot(px - (-4), pz - (-3));
-                if (distTree < 2.5) {
-                    this.inventory.push('🍎');
-                    document.getElementById('inventory-count').innerText = `${this.inventory.length} items`;
-                    this.showModal('Apple & Evidence Harvested! 🍎📁', 'You shook the neon cyber tree, collected a Quantum Apple, and found encrypted Hacker Mouse evidence!', '🌳');
-                    return;
-                }
-
-                const distChair = Math.hypot(px - 3, pz - (-2));
-                if (distChair < 2.5) {
-                    this.showModal('Resting on Cyber Chair 🪑', 'You sat down, triggered the Pauli exclusion effect, and restored your battery!', '✨');
-                    return;
-                }
-
-                this.showModal('Hacker Mouse Sighted 🐁', 'A small hacker mouse scurried past leaving a digital evidence clue on the canvas!', '💻');
-            }
-
-            loadScene(idx) {
-                this.currentSceneIdx = idx;
-                const scene = SCENES[idx];
-                const char = CHARACTERS[scene.speaker] || this.customCharacters.find(c => c.id === scene.speaker);
-
-                document.getElementById('current-scene-id').innerText = scene.sceneId;
-                document.getElementById('speaker-name').innerText = char ? char.name : "Unknown Entity";
-                document.getElementById('speaker-archetype').innerText = char ? char.archetype : "Quantum Vagabond";
-                document.getElementById('speaker-avatar').innerText = char ? (char.emoji || '🤖') : '🤖';
-                document.getElementById('dialogue-text').innerText = scene.text;
-
-                if (scene.cameraPerspective && this.theater) {
-                    this.theater.setCameraMode(scene.cameraPerspective);
-                }
-
-                const choicesContainer = document.getElementById('choices-container');
-                choicesContainer.innerHTML = '';
-                scene.choices.forEach(choice => {
-                    const btn = document.createElement('button');
-                    btn.className = 'p-2 bg-slate-900/90 hover:bg-cyan-950/80 border border-cyber-cyan/30 hover:border-cyber-cyan text-slate-200 text-xs font-semibold rounded-xl transition text-left flex items-center justify-between group shadow-sm';
-                    btn.innerHTML = `<span>${choice.text}</span><span class="text-cyber-cyan group-hover:translate-x-1 transition">→</span>`;
-                    btn.onclick = () => {
-                        if (choice.triggerBattle) {
-                            this.triggerBattle();
-                        } else if (choice.triggerMinigame) {
-                            this.openRainbowRabbitMinigame();
-                        } else if (choice.action === 'tree') {
-                            this.interactStageObject();
-                        } else if (choice.action === 'house_alice') {
-                            this.switchHouseRoom('alice');
-                            this.switchView('house');
-                        } else if (choice.action === 'house_red') {
-                            this.switchHouseRoom('red');
-                            this.switchView('house');
-                        } else if (choice.action === 'house_schrodinger') {
-                            this.switchHouseRoom('schrodinger');
-                            this.switchView('house');
-                        } else if (choice.action === 'house_mouse') {
-                            this.switchHouseRoom('mouse');
-                            this.switchView('house');
-                        } else {
-                            this.loadScene(choice.nextScene);
-                        }
-                    };
-                    choicesContainer.appendChild(btn);
-                });
-            }
-
-            async triggerGeminiDirector() {
-                const dialogueEl = document.getElementById('dialogue-text');
-                dialogueEl.innerText = "✨ [Gemini AI is generating a custom cyberpunk twist for your timeline...]";
-                
-                const systemPrompt = "You are the AI Narrative Director for Neo-Wonderland, a cyber-punk paper theater RPG. Generate a dramatic, concise 2-sentence plot twist involving Alice 404, glitching firewalls, and neon tea.";
-                const aiResponse = await this.callGeminiAPI(systemPrompt, "Give me a sudden unpredictable plot twist.");
-                
-                dialogueEl.innerText = aiResponse;
-                this.showModal('AI Director Twist 🌟', 'Gemini successfully rewrote the quantum timeline!', '✨');
-            }
-
-            async sendAIChat() {
-                const inputEl = document.getElementById('ai-chat-input');
-                const msgBox = document.getElementById('ai-chat-messages');
-                const companion = document.getElementById('ai-companion-select').value;
-                const text = inputEl.value.trim();
-                if (!text) return;
-
-                msgBox.innerHTML += `<div class="bg-slate-900 p-3 rounded-xl border border-slate-800 text-slate-200 ml-auto max-w-[85%] text-right"><strong>You:</strong> ${text}</div>`;
-                inputEl.value = '';
-                msgBox.scrollTop = msgBox.scrollHeight;
-
-                const loadingId = 'ai-loading-' + Date.now();
-                msgBox.innerHTML += `<div id="${loadingId}" class="bg-slate-900 p-3 rounded-xl border border-emerald-500/30 text-emerald-400 max-w-[85%] italic"><strong>${companion.split(' ')[0]}:</strong> Thinking through quantum circuits...</div>`;
-                msgBox.scrollTop = msgBox.scrollHeight;
-
-                const systemPrompt = `You are ${companion} in Neo-Wonderland, a cyberpunk fantasy paper theater universe. Keep your answers engaging, creative, under 3 sentences, and immersive.`;
-                const reply = await this.callGeminiAPI(systemPrompt, text);
-
-                document.getElementById(loadingId).remove();
-                msgBox.innerHTML += `<div class="bg-slate-900 p-3 rounded-xl border border-emerald-500/30 text-emerald-300 max-w-[85%]"><strong>${companion.split(' ')[0]}:</strong> ${reply}</div>`;
-                msgBox.scrollTop = msgBox.scrollHeight;
-            }
-
-            async generateAIQuest() {
-                const questDisplay = document.getElementById('ai-quest-display');
-                const questTitle = document.getElementById('ai-quest-title');
-                const questDesc = document.getElementById('ai-quest-desc');
-
-                questDisplay.classList.remove('hidden');
-                questTitle.innerText = "Generating AI Mission...";
-                questDesc.innerText = "Consulting Gemini AI universe generator...";
-
-                const systemPrompt = "You are a galactic quest generator for Neo-Wonderland. Create a catchy quest title and a 2-sentence mission description involving rogue malware or star fragments.";
-                const rawResponse = await this.callGeminiAPI(systemPrompt, "Create a new quantum quest.");
-
-                questTitle.innerText = "🌟 AI Mission: " + rawResponse.slice(0, 30) + "...";
-                questDesc.innerText = rawResponse;
-            }
-
-            useItem(itemKey) {
-                const names = { carrot: '🥕 Quantum Carrot', tea: '🍵 Neon Tea', star: '⭐ Star Fragment', apple: '🍎 Fresh Apple' };
-                this.showModal('Item Consumed', `Used ${names[itemKey] || itemKey}! HP & Neural Energy fully restored.`, '✨');
-            }
-
-            triggerBattle() {
-                const modal = document.getElementById('modal-minigame');
-                const content = document.getElementById('minigame-content');
-                modal.classList.remove('hidden');
-
-                content.innerHTML = `
-                    <h3 class="text-lg font-extrabold text-red-400 mb-2">⚔️ BATTLE: Rogue Malware Bug (🐛 v4.1)</h3>
-                    <p class="text-xs text-slate-300 mb-4">Choose your tactical emoji attack to neutralize the corruption!</p>
-                    <div class="bg-slate-900 p-4 rounded-2xl border border-red-500/30 mb-4 flex justify-around items-center">
-                        <div class="text-center"><div class="text-3xl">🐇⚡</div><span class="text-xs text-cyan-400 font-mono">Alice HP: 100/100</span></div>
-                        <div class="text-xl font-bold text-slate-500">VS</div>
-                        <div class="text-center"><div class="text-3xl animate-bounce">🐛🔥</div><span class="text-xs text-red-400 font-mono">Bug HP: 80/80</span></div>
-                    </div>
-                    <div class="grid grid-cols-2 gap-2">
-                        <button onclick="app.resolveBattle()" class="p-3 bg-cyan-950 hover:bg-cyan-900 border border-cyan-500 text-cyan-300 text-xs font-bold rounded-xl transition">⚡ Laser Carrot Blast</button>
-                        <button onclick="app.resolveBattle()" class="p-3 bg-purple-950 hover:bg-purple-900 border border-purple-500 text-purple-300 text-xs font-bold rounded-xl transition">🛡️ Quantum Shield Hack</button>
-                    </div>
-                `;
-            }
-
-            resolveBattle() {
-                this.closeMinigame();
-                this.inventory.push('⭐');
-                document.getElementById('inventory-count').innerText = `${this.inventory.length} items`;
-                this.showModal('Victory! 🎉', 'You defeated the Malware Bug and gained a ⭐ Star Fragment!', '⚔️');
-            }
-
-            launchSpaceTravel(sectorName) {
-                this.showModal('Warp Drive Engaged 🚀', `Warping across the galaxy to ${sectorName}... Preparing real-time Star Warp arcade run!`, '🌌');
-                setTimeout(() => {
-                    document.getElementById('modal-message').classList.add('hidden');
-                    this.openRainbowRabbitMinigame();
-                }, 1000);
-            }
-
-            inspectAndTravel(sectorName) {
-                document.getElementById('selected-sector-info').innerText = `${sectorName} telemetry locked! Launching real-time Star Warp arcade run...`;
-                setTimeout(() => {
-                    this.openRainbowRabbitMinigame();
-                }, 700);
-            }
-
-            openRainbowRabbitMinigame() {
-                const modal = document.getElementById('modal-minigame');
-                const content = document.getElementById('minigame-content');
-                modal.classList.remove('hidden');
-
-                content.innerHTML = `
-                    <h3 class="text-lg font-extrabold text-cyber-cyan mb-1">🌌 Star Warp Arcade: Quantum Catcher</h3>
-                    <p class="text-xs text-slate-300 mb-2">Use Left/Right buttons or Arrow keys to steer the rabbit 🐇, catch ⭐ stars, and dodge 🐛 malware bugs!</p>
-                    
-                    <div class="relative bg-slate-950 border border-cyber-cyan/40 rounded-2xl overflow-hidden shadow-inner flex flex-col items-center">
-                        <canvas id="star-warp-canvas" width="400" height="250" class="w-full h-auto bg-slate-950 block"></canvas>
-                    </div>
-
-                    <div class="flex justify-between items-center mt-3 text-xs font-mono">
-                        <span id="arcade-score" class="text-cyber-cyan font-bold">Score: 0 / 10 ⭐</span>
-                        <div class="flex space-x-2">
-                            <button onclick="app.steerArcadePlayer('left')" class="px-3 py-1.5 bg-cyan-950 hover:bg-cyan-900 border border-cyan-500/50 text-cyber-cyan font-bold rounded-xl transition">⬅️ Left</button>
-                            <button onclick="app.steerArcadePlayer('right')" class="px-3 py-1.5 bg-cyan-950 hover:bg-cyan-900 border border-cyan-500/50 text-cyber-cyan font-bold rounded-xl transition">Right ➡️</button>
-                        </div>
-                        <button onclick="app.closeMinigame()" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold rounded-xl transition">Exit</button>
-                    </div>
-                `;
-                this.startArcadeGameLoop();
-            }
-
-            startArcadeGameLoop() {
-                const canvas = document.getElementById('star-warp-canvas');
-                if (!canvas) return;
-                const ctx = canvas.getContext('2d');
-                
-                this.arcadeState = {
-                    playerX: 200,
-                    playerY: 215,
-                    score: 0,
-                    targetScore: 10,
-                    items: [],
-                    gameOver: false
-                };
-
-                for (let i = 0; i < 4; i++) {
-                    this.arcadeState.items.push({
-                        x: Math.random() * 360 + 20,
-                        y: -Math.random() * 200,
-                        type: Math.random() > 0.35 ? 'star' : 'bug',
-                        speed: Math.random() * 1.2 + 1.8
-                    });
-                }
-
-                const keydownHandler = (e) => {
-                    if (e.key === 'ArrowLeft' || e.key === 'a') this.steerArcadePlayer('left');
-                    if (e.key === 'ArrowRight' || e.key === 'd') this.steerArcadePlayer('right');
-                };
-                window.addEventListener('keydown', keydownHandler);
-                this._arcadeKeyHandler = keydownHandler;
-
-                const loop = () => {
-                    if (!document.getElementById('star-warp-canvas')) {
-                        window.removeEventListener('keydown', this._arcadeKeyHandler);
-                        return;
-                    }
-                    if (this.arcadeState.gameOver) return;
-
-                    ctx.fillStyle = '#070711';
-                    ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-                    // Background starfield
-                    ctx.fillStyle = '#ffffff';
-                    ctx.fillRect(40, 25, 2, 2);
-                    ctx.fillRect(140, 70, 2, 2);
-                    ctx.fillRect(260, 40, 2, 2);
-                    ctx.fillRect(340, 130, 2, 2);
-
-                    this.arcadeState.items.forEach(item => {
-                        item.y += item.speed;
-                        if (item.y > canvas.height + 20) {
-                            item.y = -20;
-                            item.x = Math.random() * 360 + 20;
-                            item.type = Math.random() > 0.35 ? 'star' : 'bug';
-                        }
-
-                        ctx.font = '24px sans-serif';
-                        ctx.textAlign = 'center';
-                        ctx.textBaseline = 'middle';
-                        ctx.fillText(item.type === 'star' ? '⭐' : '🐛', item.x, item.y);
-
-                        const dist = Math.hypot(item.x - this.arcadeState.playerX, item.y - this.arcadeState.playerY);
-                        if (dist < 28) {
-                            if (item.type === 'star') {
-                                this.arcadeState.score++;
-                                document.getElementById('arcade-score').innerText = `Score: ${this.arcadeState.score} / 10 ⭐`;
-                                if (this.arcadeState.score >= 10) {
-                                    this.arcadeState.gameOver = true;
-                                    this.showModal('Star Warp Victory! 🌟', 'You successfully completed the real-time star warp run and earned ultimate quantum bonuses!', '🌈');
-                                }
-                            } else {
-                                this.arcadeState.score = Math.max(0, this.arcadeState.score - 2);
-                                document.getElementById('arcade-score').innerText = `Score: ${this.arcadeState.score} / 10 ⭐ (Hit Bug!)`;
-                            }
-                            item.y = -20;
-                            item.x = Math.random() * 360 + 20;
-                        }
-                    });
-
-                    ctx.font = '32px sans-serif';
-                    ctx.fillText('🐇⚡', this.arcadeState.playerX, this.arcadeState.playerY);
-
-                    this._arcadeAnimFrame = requestAnimationFrame(loop);
-                };
-                loop();
-            }
-
-            steerArcadePlayer(dir) {
-                if (!this.arcadeState) return;
-                if (dir === 'left') this.arcadeState.playerX = Math.max(25, this.arcadeState.playerX - 35);
-                if (dir === 'right') this.arcadeState.playerX = Math.min(375, this.arcadeState.playerX + 35);
-            }
-
-            renderHouseGrid() {
-                const display = document.getElementById('house-room-display');
-                if (!display) return;
-                display.innerHTML = '';
-                const roomData = this.houseRooms[this.currentHouseRoom];
-
-                for (let y = 0; y < 5; y++) {
-                    for (let x = 0; x < 5; x++) {
-                        const cell = document.createElement('div');
-                        cell.className = 'w-12 h-12 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-center text-xl';
-                        const key = `${x},${y}`;
-                        
-                        if (x === this.housePlayerPos.x && y === this.housePlayerPos.y) {
-                            cell.innerHTML = '🐇';
-                            cell.classList.add('border-cyber-cyan', 'shadow-[0_0_10px_rgba(0,255,204,0.4)]');
-                        } else if (roomData.items[key]) {
-                            cell.innerHTML = roomData.items[key];
-                        }
-                        display.appendChild(cell);
-                    }
-                }
-            }
-
-            moveHousePlayer(dir) {
-                if (dir === 'up' && this.housePlayerPos.y > 0) this.housePlayerPos.y--;
-                if (dir === 'down' && this.housePlayerPos.y < 4) this.housePlayerPos.y++;
-                if (dir === 'left' && this.housePlayerPos.x > 0) this.housePlayerPos.x--;
-                if (dir === 'right' && this.housePlayerPos.x < 4) this.housePlayerPos.x++;
-                
-                const key = `${this.housePlayerPos.x},${this.housePlayerPos.y}`;
-                const roomData = this.houseRooms[this.currentHouseRoom];
-                
-                if (dir === 'inspect' || roomData.items[key]) {
-                    const item = roomData.items[key] || '🔍 Evidence';
-                    this.inventory.push(item);
-                    document.getElementById('inventory-count').innerText = `${this.inventory.length} items`;
-                    document.getElementById('house-interaction-log').innerText = `🔍 Collected item/evidence [${item}] from ${roomData.name}! Hacker Mouse symbol verified.`;
-                    delete roomData.items[key];
-                } else {
-                    document.getElementById('house-interaction-log').innerText = `🚶 Moved ${dir} in ${roomData.name}.`;
-                }
-                this.renderHouseGrid();
-            }
-
-            upgradeSkill() {
-                this.showModal('Skill Upgraded! ⚡', 'Quantum Firewall Buster has been upgraded to Tier II!', '🚀');
-            }
-
-            saveGame() {
-                localStorage.setItem('quantum_universe_save_v3', JSON.stringify({ scene: this.currentSceneIdx, inventory: this.inventory }));
-                document.getElementById('save-status').innerText = '✅ Progress saved to timeline!';
-                setTimeout(() => document.getElementById('save-status').innerText = '', 3000);
-            }
-
-            loadGame() {
-                const saved = localStorage.getItem('quantum_universe_save_v3');
-                if (saved) {
-                    const data = JSON.parse(saved);
-                    this.currentSceneIdx = data.scene;
-                    this.inventory = data.inventory || ['🥕', '🍵', '⭐', '🍎'];
-                    this.loadScene(this.currentSceneIdx);
-                    this.showModal('Save Loaded', 'Successfully restored your timeline & inventory!', '📂');
-                } else {
-                    this.showModal('No Save', 'No prior timelines found.', '⚠️');
-                }
-            }
-
-            registerCustomCharacter() {
-                const name = document.getElementById('new-char-name').value.trim();
-                if (!name) {
-                    this.showModal('Name Required', 'Please enter a character name.', '⚠️');
-                    return;
-                }
-                const newChar = { id: 'custom_' + Date.now(), name, archetype: 'Custom Standee', emoji: '✨', color: '#ff007f' };
-                CHARACTERS[newChar.id] = newChar;
-                this.showModal('Registered', `${name} injected into 3D theater!`, '🎨');
-                this.switchView('game');
-            }
-
-            closeMinigame() {
-                document.getElementById('modal-minigame').classList.add('hidden');
-            }
-
-            showModal(title, text, icon = '✨') {
-                document.getElementById('msg-title').innerText = title;
-                document.getElementById('msg-text').innerText = text;
-                document.getElementById('msg-icon').innerText = icon;
-                document.getElementById('modal-message').classList.remove('hidden');
-            }
-        }
-
-        const app = new AppController();
-        window.onload = () => {
-            app.init();
-        };
-    </script>
+    <div class="interact">
+      <button onclick="openMinigame('password')">🔐 Terminal</button>
+      <button onclick="openMinigame('evidence')">🗂 Evidence</button>
+      <button onclick="openMinigame('audio')">🎵 Audio</button>
+      <button onclick="openDialogue()">💬 Talk</button>
+    </div>
+  </div>
+
+  <div class="editor" id="editor">
+    <div class="editor-grid">
+      <div class="toolbox">
+        <h3>ROOM EDITOR</h3>
+        <p class="hint">Rebuild the 3D backdrop while keeping characters as 2D paperdolls.</p>
+        <button onclick="addNode()">＋ Add prop</button>
+        <button onclick="toggleGrid()">⌗ Toggle neon grid</button>
+        <button onclick="cycleTheme()">◈ Cycle room theme</button>
+        <button onclick="randomizeRoom()">✦ Surprise me</button>
+        <hr style="border-color:#233d5e">
+        <button onclick="closeEditor()">← Back to game</button>
+      </div>
+      <div class="edit-canvas" id="editCanvas">
+        <div class="wall"></div><div class="neon-grid" id="editGrid"></div>
+        <div class="node n1" draggable="true">HOLO DISPLAY</div>
+        <div class="node n2" draggable="true">EVIDENCE LOCKER</div>
+        <div class="node n3" draggable="true">AUDIO DECK</div>
+      </div>
+      <div class="inspector">
+        <h3>INSPECTOR</h3>
+        <p class="hint">Select a prop to move it. Drag nodes directly in the scene.</p>
+        <label>Scale</label><input id="scale" type="range" min=".6" max="1.8" step=".1" value="1" oninput="scaleSelected(this.value)">
+        <label>Glow</label><input id="glow" type="range" min="0" max="1" step=".1" value=".5" oninput="glowSelected(this.value)">
+        <p class="hint">Tip: make hidden passages by placing props over wall panels. The editor state is saved locally.</p>
+      </div>
+    </div>
+  </div>
+</main>
+
+<aside id="right">
+  <section class="panel mini"><h3>PROOF LOCKER</h3><div class="body">
+    <div class="filegrid" id="files"></div>
+    <p class="hint">Click two evidence cards to attempt a link. Correct links increase Evidence Sync.</p>
+  </div></section>
+  <section class="panel mini"><h3>AURA-SYNC AUDIO ENGINE</h3><div class="body">
+    <div class="wave" id="wave"></div>
+    <label class="hint">BPM <b id="bpm">128</b></label><input id="bpmRange" type="range" min="80" max="180" value="128">
+    <label class="hint">Vibe Intensity</label><div class="meter"><i id="vibe"></i></div>
+    <button style="margin-top:10px;width:100%" onclick="openMinigame('audio')">Start Rhythm Trace</button>
+  </div></section>
+  <section class="panel mini"><h3>X42 NOVELLEN-SCRIPT</h3><div class="body">
+    <div id="dialogPreview" class="hint">Hacker: “Die Firewall ist fast geknackt. Bist du bereit?”</div>
+    <div class="row" style="margin-top:10px"><button onclick="openDialogue()">Play scene</button><button onclick="randomLine()">Random line</button></div>
+  </div></section>
+</aside>
+</div>
+</div>
+
+<div class="modal" id="modal"><div class="dialog" id="dialog"></div></div>
+<div id="toast"></div>
+
+<script>
+const rooms=[
+ ['01','Quantum Lab','password'],['02','Dream Archive','evidence'],['03','Neon Rooftop','audio'],['04','Memory Vault','dialogue'],['05','Utopia Core','boss']
+];
+let state=JSON.parse(localStorage.getItem('qpd-save')||'null')||{room:0,happy:74,focus:81,sync:32,solved:0,editorTheme:0,grid:true};
+let selected=null, evidencePick=null;
+
+function renderRooms(){
+ const el=document.getElementById('rooms'); el.innerHTML='';
+ rooms.forEach((r,i)=>{let b=document.createElement('button');b.className='room '+(i===state.room?'active':'');b.innerHTML=`ROOM ${r[0]} · ${r[1]}<small>${i===state.room?'● ACTIVE':'○ LOCKED / EXPLORE'}</small>`;b.onclick=()=>{state.room=i;document.getElementById('roomTitle').textContent=`ROOM ${r[0]} · ${r[1].toUpperCase()}`;renderRooms();toast('Entered '+r[1]);};el.appendChild(b)});
+}
+function updateStats(){for(const [id,v] of [['happy',state.happy],['focus',state.focus],['sync',state.sync]]){document.getElementById(id+'V').textContent=v+'%';document.getElementById(id+'B').style.width=v+'%'}}
+function save(){localStorage.setItem('qpd-save',JSON.stringify(state));toast('Case saved locally ✓')}
+function toast(t){let x=document.getElementById('toast');x.textContent=t;x.className='toast';setTimeout(()=>x.className='',1600)}
+function modal(html){document.getElementById('dialog').innerHTML=html;document.getElementById('modal').classList.add('show')}
+function closeModal(){document.getElementById('modal').classList.remove('show')}
+document.getElementById('modal').onclick=e=>{if(e.target.id==='modal')closeModal()};
+
+function openMinigame(type){
+ if(type==='password') return passwordGame();
+ if(type==='evidence') return evidenceGame();
+ if(type==='audio') return audioGame();
+}
+function passwordGame(){
+ const codes=['7319','2048','X42!']; let code=codes[Math.floor(Math.random()*codes.length)];
+ modal(`<h2>🔐 Quantum Terminal</h2><p class="hint">A rotating security lock asks for a four-digit access key. Decode the clue:</p>
+ <div class="code">${code}</div><p>Enter the key without spaces.</p>
+ <div class="row"><input id="pw" placeholder="••••" maxlength="4" inputmode="numeric"><button onclick="checkPw('${code}')">Inject</button></div>
+ <p class="hint">Bonus: wrong attempts reduce Focus. Correct solutions reveal a hidden evidence tag.</p>`);
+}
+function checkPw(code){let v=document.getElementById('pw').value.trim(); if(v===code.replace('X42!','')){state.sync=Math.min(100,state.sync+14);state.focus=Math.min(100,state.focus+3);state.solved++;closeModal();updateStats();toast('ACCESS GRANTED · hidden tag recovered')}else{state.focus=Math.max(0,state.focus-7);updateStats();toast('ACCESS DENIED · trace detected')}}
+function evidenceGame(){
+ const cards=[['A','Blackout log'],['B','Redacted memo'],['C','Audio fingerprint'],['D','Transit ping'],['E','Drone photo'],['F','Quantum key']];
+ modal(`<h2>🗂 Evidence Linker</h2><p class="hint">Pair clues that share a hidden connection. Start with the strongest forensic match.</p>
+ <div class="filegrid">${cards.map((c,i)=>`<button class="file" onclick="pickEvidence(${i})" id="ev${i}">${c[0]}<br>${c[1]}</button>`).join('')}</div>
+ <p id="evMsg" class="hint">Selected: none</p>`);
+}
+function pickEvidence(i){
+ if(evidencePick===null){evidencePick=i;document.getElementById('ev'+i).classList.add('selected');document.getElementById('evMsg').textContent='Selected: '+i+' — choose a second clue.';return}
+ const good=(evidencePick===0&&i===3)||(evidencePick===2&&i===5)||(evidencePick===1&&i===4);
+ if(good){state.sync=Math.min(100,state.sync+18);state.solved++;document.getElementById('evMsg').innerHTML='<span class="success">LINK CONFIRMED. Evidence graph expanded.</span>'}
+ else{state.sync=Math.max(0,state.sync-4);document.getElementById('evMsg').innerHTML='<span class="fail">FALSE LINK. The trail goes cold.</span>'}
+ updateStats();evidencePick=null;document.querySelectorAll('.file').forEach(x=>x.classList.remove('selected'));
+}
+function audioGame(){
+ let beat=0, target=Math.floor(Math.random()*4), buttons='';
+ for(let i=0;i<8;i++)buttons+=`<button onclick="hitBeat(${i})">${i+1}</button>`;
+ modal(`<h2>🎵 Aura-Sync Rhythm Trace</h2><p class="hint">The waveform hides a four-beat signature. Hit the pulse in the correct slot.</p><div class="wave">${Array.from({length:42},(_,i)=>`<i style="--h:${15+Math.abs(Math.sin(i*.8))*60}%"></i>`).join('')}</div><div class="choices">${buttons}</div><p id="beatMsg" class="hint">Find the pulse…</p>`);
+ window.hitBeat=i=>{if(i%4===target){state.focus=Math.min(100,state.focus+8);state.sync=Math.min(100,state.sync+9);state.solved++;document.getElementById('beatMsg').innerHTML='<span class="success">PERFECT SYNC! The audio unlocks a memory fragment.</span>'}else{state.focus=Math.max(0,state.focus-5);document.getElementById('beatMsg').innerHTML='<span class="fail">Off-beat. The firewall noticed.</span>'}updateStats()}
+}
+function openDialogue(){
+ const scenes=[
+ ['Hacker','Die Firewall ist fast geknackt. Bist du bereit?',['Ich bin bereit.','Noch nicht.','Zeig mir die Beweise.']],
+ ['Archivistin','Jemand hat die Utopia-Protokolle verändert. Wer hatte Zugriff?',['Der Nachtwächter.','Das Audio-Netz.','Ich suche erst nach Spuren.']],
+ ['Hacker','Wir können den Core öffnen — aber nur einmal.',['Öffnen.','Erst sichern.','Täuschungsangriff starten.']]
+ ];
+ const s=scenes[state.room%scenes.length];
+ modal(`<h2>💬 ${s[0]}</h2><p style="font-size:18px">${s[1]}</p><div class="choices">${s[2].map((x,i)=>`<button onclick="dialogChoice(${i})">${x}</button>`).join('')}</div><p class="hint">Choices influence Happiness, Focus and which minigame appears next.</p>`);
+ window.dialogChoice=i=>{state.happy=Math.max(0,Math.min(100,state.happy+(i===0?4:-2)));state.focus=Math.max(0,Math.min(100,state.focus+(i===1?4:-1)));updateStats();closeModal();toast(['Trust increased.','Caution noted.','Investigation path expanded.'][i]);}
+}
+function randomLine(){const l=['The city remembers everything.','Password accepted. Reality unstable.','Someone is editing the evidence.','Utopia is not a place — it is a protocol.'];document.getElementById('dialogPreview').textContent='Hacker: “'+l[Math.floor(Math.random()*l.length)]+'”'}
+
+function openEditor(){document.getElementById('editor').classList.add('open');setupNodes()}
+function closeEditor(){document.getElementById('editor').classList.remove('open');save()}
+document.getElementById('editorBtn').onclick=openEditor; document.getElementById('mapBtn').onclick=closeEditor; document.getElementById('saveBtn').onclick=save;
+
+function setupNodes(){document.querySelectorAll('.node').forEach(n=>{n.onmousedown=()=>{selected=n;n.classList.add('sel');document.querySelectorAll('.node').forEach(x=>x!==n&&x.classList.remove('sel'))};n.ondragend=e=>{let r=document.getElementById('editCanvas').getBoundingClientRect();n.style.left=((e.clientX-r.left)/r.width*100-4)+'%';n.style.top=((e.clientY-r.top)/r.height*100-4)+'%'}})}
+function addNode(){let n=document.createElement('div');n.className='node';n.textContent=['HIDDEN DOOR','HOLO TREE','SERVER RACK','LASER TRIPWIRE','SECRET DESK'][Math.floor(Math.random()*5)];n.style.left=40+Math.random()*40+'%';n.style.top=20+Math.random()*55+'%';n.draggable=true;document.getElementById('editCanvas').appendChild(n);setupNodes();toast('Prop added')}
+function toggleGrid(){document.getElementById('editGrid').style.display=document.getElementById('editGrid').style.display==='none'?'block':'none'}
+function cycleTheme(){state.editorTheme=(state.editorTheme+1)%4;let colors=[['#111b39','#091126'],['#24152f','#0a112a'],['#132c2b','#07151d'],['#2a1c16','#0b0d1c']][state.editorTheme];document.querySelector('.edit-canvas').style.background=`linear-gradient(145deg,${colors[0]},${colors[1]})`;toast('Theme shifted')}
+function randomizeRoom(){document.querySelectorAll('.node').forEach(n=>{n.style.left=5+Math.random()*82+'%';n.style.top=12+Math.random()*70+'%';n.style.transform=`scale(${.8+Math.random()*1.2}) rotate(${Math.random()*12-6}deg)`});toast('Room remixed ✦')}
+function scaleSelected(v){if(selected)selected.style.transform=`scale(${v})`}
+function glowSelected(v){if(selected)selected.style.boxShadow=`0 0 ${4+v*24}px #ff55df${Math.round(v*99).toString(16).padStart(2,'0')}`}
+document.getElementById('bpmRange').oninput=e=>document.getElementById('bpm').textContent=e.target.value;
+
+const wave=document.getElementById('wave');for(let i=0;i<56;i++){let x=document.createElement('i');x.style.setProperty('--h',(12+Math.random()*70)+'%');wave.appendChild(x)}
+renderRooms();updateStats();
+window.addEventListener('keydown',e=>{if(e.key==='Escape'){closeModal();closeEditor()}});
+</script>
 </body>
 </html>
